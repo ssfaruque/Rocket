@@ -1,7 +1,13 @@
 # What we have done
-1. implementing communication layer 
-2. DSM layer planing and boiler plate code
+1. implementing communication layer using socket
+2. DSM layer planing 
    shared memory mechanism
-# What are they going to do this week, and 
-   boilerplate code fro DSM layer (transfering ownershiip of pages(mprotect), handle sigfaults, signal handling function, listening port for page requests) mmap for memory.
-# Any issues we're having / things they're stuck on.
+# What we're going to do this week
+   boilerplate code for DSM layer 
+   * transfering ownershiip of pages(mprotect) 
+   * handle sigfaults 
+   * signal handling function
+   * listening port for page requests
+   * mmap for memory allocation
+# Any issues we're having:
+   * Figuring out DSM mechanism and break tasks down
