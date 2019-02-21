@@ -9,7 +9,15 @@ int main(int argc, char* argv[])
     socket_t network_socket = create_socket();
 
     /* struct containing details about port and IP address */
-    sockaddr_in_t addr = create_socket_addr(9002, "10.0.0.89");
+    sockaddr_in_t addr = create_socket_addr(9002, INADDR_ANY);
+
+    /* Note: With 'INADDR_ANY', server-client programs will only
+     * work on a single machine. In order for server-client programs
+     * to work across multiple computers, change 'INADDR_ANY' into
+     * the IPv4 address of the server machine. This can be found
+     * using the 'ifconfig' command in Linux. 
+     * Example of an IP address to be passed in as a string: "10.1.2.3" 
+     * /
 
     /* attempting to establish a connection on the socket */
     int connection_status = connect_socket(network_socket, &addr);
