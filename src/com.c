@@ -2,6 +2,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <arpa/inet.h>
 
 #include "com.h"
 
@@ -11,23 +12,28 @@ socket_t create_socket()
 }
 
 
-sockaddr_in_t create_sock_addr(int port, int internet_addr)
+sockaddr_in_t create_socket_addr(int port, const char* internet_addr)
 {
     struct sockaddr_in address;
     address.sin_family = AF_INET;
     address.sin_port = htons(port);
-    address.sin_addr.s_addr = htonl(internet_addr);
+
+    if(!internet_addr)
+        address.sin_addr.s_addr = htonl(INADDR_ANY);
+    else
+        address.sin_addr.s_addr = inet_addr(internet_addr);
+
     return address;
 }
 
 
-int connect_sock(socket_t sock, sockaddr_in_t* sock_addr)
+int connect_socket(socket_t sock, sockaddr_in_t* sock_addr)
 {
     return connect(sock, (struct sockaddr*) sock_addr, sizeof(*sock_addr));
 }
 
 
-int bind_sock(socket_t sock, sockaddr_in_t* sock_addr)
+int bind_socket(socket_t sock, sockaddr_in_t* sock_addr)
 {
     return bind(sock, (struct sockaddr*) sock_addr, sizeof(*sock_addr));
 }
@@ -57,7 +63,7 @@ int send_msg(socket_t sock, char* buffer, int num_bytes)
 }
 
 
-int close_sock(socket_t sock)
+int close_socket(socket_t sock)
 {
     return close(sock);
 }

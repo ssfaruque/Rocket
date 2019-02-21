@@ -17,7 +17,7 @@ socket_t create_socket();
 
 
 /*
- * create_sock_addr
+ * create_socket_addr
  * @port: The port to configure the socket address with
  * @internet_addr: The IP address to configure the socket address with
  * 
@@ -25,11 +25,11 @@ socket_t create_socket();
  * 
  * Return: A sockaddr_in_t struct configured with the parameters provided 
  */ 
-sockaddr_in_t create_sock_addr(int port, int internet_addr);
+sockaddr_in_t create_socket_addr(int port,  const char* internet_addr);
 
 
 /*
- * connect_sock
+ * connect_socket
  * @sock: The socket to connect to
  * @sock_addr: The struct configured for the socket
  * 
@@ -37,11 +37,11 @@ sockaddr_in_t create_sock_addr(int port, int internet_addr);
  * 
  * Return: 0 for success or -1 for error
  */
-int connect_sock(socket_t sock, sockaddr_in_t* sock_addr);
+int connect_socket(socket_t sock, sockaddr_in_t* sock_addr);
 
 
 /*
- * bind_sock
+ * bind_socket
  * @sock: The socket to bind to
  * @sock_addr: The struct configured for the socket
  * 
@@ -49,7 +49,7 @@ int connect_sock(socket_t sock, sockaddr_in_t* sock_addr);
  * 
  * Return: 0 for success or -1 for error
  */
-int bind_sock(socket_t sock, sockaddr_in_t* sock_addr);
+int bind_socket(socket_t sock, sockaddr_in_t* sock_addr);
 
 
 /*
@@ -104,13 +104,13 @@ int send_msg(socket_t sock, char* buffer, int num_bytes);
 
 
 /*
- * close_sock
+ * close_socket
  * @sock: The specified socket to close
  * 
  * Closes the specified socket and cleans up its associated resources
  * 
  * Return: 0 for success or -1 for error
  */
-int close_sock(socket_t sock);
+int close_socket(socket_t sock);
 
 #endif  // COM_H
