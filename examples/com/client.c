@@ -17,7 +17,7 @@ int main(int argc, char* argv[])
      * the IPv4 address of the server machine. This can be found
      * using the 'ifconfig' command in Linux. 
      * Example of an IP address to be passed in as a string: "10.1.2.3" 
-     * /
+     */
 
     /* attempting to establish a connection on the socket */
     int connection_status = connect_socket(network_socket, &addr);
