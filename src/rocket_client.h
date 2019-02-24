@@ -7,9 +7,8 @@ int rocket_client_init(int addr_size);
 
 int rocket_client_exit();
 
-struct Page* rocket_client_access_page(int page_num);
+void* rocket_alloc(int num_bytes);
 
-
-
+int rocket_dealloc(void* address);
 
 #endif  // ROCKET_CLIENT_H

@@ -27,7 +27,8 @@ $(TARGET): $(OBJS)
 
 
 $(OBJSDIR)/%.o: $(SRCDIR)/%.c
-	$(CC) $(CFLAGS) $(INCLUDEPATHS) -c $< -o $@ -MMD -MF $(patsubst $(OBJSDIR)/%.o, $(DEPSDIR)/%.d, $@)
+	$(CC) $(CLIBS := $(shell find libs -name "*.a") 
+FLAGS) $(INCLUDEPATHS) -c $< -o $@ -MMD -MF $(patsubst $(OBJSDIR)/%.o, $(DEPSDIR)/%.d, $@)
 
 
 directories:

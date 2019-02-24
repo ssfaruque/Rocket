@@ -71,7 +71,18 @@ int relinquish_page()
 }
 
 
-struct Page* rocket_client_access_page(int page_num)
+struct Page* rocket_access_page(int page_num)
 {
     return NULL;
+}
+
+
+void* rocket_alloc(int num_bytes)
+{
+    return 0;
+}
+
+int rocket_dealloc(void* address)
+{
+    return 0;
 }
