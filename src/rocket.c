@@ -4,7 +4,8 @@
 #include <sys/mman.h>
 #include <stdio.h>
 #include <stdlib.h>
-
+#include "com.h"
+#include "com.c"
 //Page size will be default 4KB
 #define page_size 4096
 
@@ -23,11 +24,11 @@ void sigfault_handler(int sig, siginfo_t *info, void *ucontext)
   void* temp = get_base_address();
   base_addr = (char*)temp;
   int page_number = ((int)(curr_addr - base_addr))/page_size;
-
 }
 
 void launch_rocket(char* master_ip, int master_port, char* slave_ip, int slave_port, int num_pages)
 {
+   
   //Using mmap for mapping the addresses-- private copy-on-write mapping
   char* addr = mmap(get_base_address(), num_pages * page_size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1,0);
 
@@ -43,7 +44,7 @@ void launch_rocket(char* master_ip, int master_port, char* slave_ip, int slave_p
 
 }
 
-void land_rocket()
+void land_rocket(socket_t sock)
 {
   //TODO: terminate sockets, perform clean up, etc.
   return;
