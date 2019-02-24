@@ -25,11 +25,8 @@ $(TARGET): $(OBJS)
 	@echo "Building the Rocket library..."
 	ar rcs $@ $^
 
-
 $(OBJSDIR)/%.o: $(SRCDIR)/%.c
-	$(CC) $(CLIBS := $(shell find libs -name "*.a") 
-FLAGS) $(INCLUDEPATHS) -c $< -o $@ -MMD -MF $(patsubst $(OBJSDIR)/%.o, $(DEPSDIR)/%.d, $@)
-
+	$(CC) $(CFLAGS) -c $< -o $@ -MMD -MF $(patsubst $(OBJSDIR)/%.o, $(DEPSDIR)/%.d, $@)
 
 directories:
 	@echo "Creating necessary build and output directories for rocket..."
