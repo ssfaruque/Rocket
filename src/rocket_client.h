@@ -1,3 +1,5 @@
+#include "rocket_com.h"
+#include "signal.h"
 #ifndef ROCKET_CLIENT_H
 #define ROCKET_CLIENT_H
 
@@ -11,4 +13,6 @@ void* rocket_alloc(int num_bytes);
 
 int rocket_dealloc(void* address);
 
+
+Page* client_communicate(socket_t network_socket);
 #endif  // ROCKET_CLIENT_H

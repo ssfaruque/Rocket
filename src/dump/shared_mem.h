@@ -13,5 +13,4 @@ void clear_shared_mem(byte val);
 void destroy_shared_mem(struct shared_mem* mem);
 
 
-
 #endif  // SHARED_MEM_H

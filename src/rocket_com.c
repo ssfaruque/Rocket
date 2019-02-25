@@ -4,7 +4,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
-#include "com.h"
+#include "rocket_com.h"
 #include "page.h"
 
 socket_t create_socket()
@@ -52,7 +52,7 @@ int accept_connection(socket_t sock, sockaddr_in_t* addr, int* addr_length)
 }
 
 
-int recv_msg(socket_t sock, char* buffer, int num_bytes)
+int recv_msg(socket_t sock, Page* buffer, int num_bytes)
 {
     return recv(sock, buffer, num_bytes, 0);
 }

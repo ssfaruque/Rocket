@@ -45,6 +45,13 @@ int rocket_client_init(int addr_size)
 
     // TODO: Assigning default pages to master and slave nodes to start with (need to demarcate them somehow), socket code goes here for all communication, thread running function that responds to page requests on both master and slave nodes runs here too.
 
+
+    // Code: for establishing the communication with the client.
+    socket_t network_socket = create_socket();
+    struct Page* page_requested = client_communicate(network_socket);
+    close_socket(network_socket);
+    printf("%p",page_requested);
+    
     return 0;
 }
 
@@ -85,4 +92,37 @@ void* rocket_alloc(int num_bytes)
 int rocket_dealloc(void* address)
 {
     return 0;
+}
+
+
+struct Page* client_communicate(socket_t network_socket)
+{ 
+    
+
+    /* struct containing details about port and IP address */
+    sockaddr_in_t addr = create_socket_addr(9002, INADDR_ANY);
+
+    /* Note: With 'INADDR_ANY', server-client programs will only
+     * work on a single machine. In order for server-client programs
+     * to work across multiple computers, change 'INADDR_ANY' into
+     * the IPv4 address of the server machine. This can be found
+     * using the 'ifconfig' command in Linux. 
+     * Example of an IP address to be passed in as a string: "10.1.2.3" 
+     */
+
+    /* attempting to establish a connection on the socket */
+    int connection_status = connect_socket(network_socket, &addr);
+
+    if(connection_status == -1)
+    {
+        printf("Could not connect!\n");
+        exit(1);
+    }
+
+    struct Page* page_request = NULL;
+
+    /* read sizeof(val) number of bytes and put bytes into the variable 'val' */
+    recv_msg(network_socket, (Page*) page_request, sizeof(page_request));
+    
+    return page_request;  
 }
