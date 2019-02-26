@@ -87,7 +87,7 @@ int accept_connection(socket_t sock, sockaddr_in_t* addr, int* addr_length);
  * 
  * Return: Number of bytes read or -1 for error
  */
-int recv_msg(socket_t sock, struct Page* buffer, int num_bytes);
+int recv_msg(socket_t sock, char* buffer, int num_bytes);
 
 
 /*
