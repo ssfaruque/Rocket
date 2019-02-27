@@ -155,14 +155,14 @@ int rocket_client_init(int addr_size)
 
     */
     // for establishing the communication with the server.
-    socket_t master_socket = create_socket();    
+    master_socket = create_socket();    
     
     // Todo: change master IP address
     char* MASTER_IP = INADDR_ANY;
     sockaddr_in_t addr = create_socket_addr(9002, MASTER_IP);
 
     /* Attempting to establish a connection on the socket */
-    int connection_status = connect_socket(network_socket, &addr);
+    int connection_status = connect_socket(master_socket, &addr);
 
     if(connection_status == -1)
     {
@@ -171,12 +171,12 @@ int rocket_client_init(int addr_size)
     }
 
     // Retrieve client number from server
-    recv_msg(network_socket, (char*) &client_num, sizeof(client_number));
+    recv_msg(master_socket, (char*) &client_num, sizeof(client_number));
     printf("client number: %d\n", client_num);
    
     // Send server an acknowledgement
     int SUCCESS = 1;
-    send_msg(network_socket, (char*) &SUCCESS, sizeof(SUCCESS)); 
+    send_msg(master_socket, (char*) &SUCCESS, sizeof(SUCCESS)); 
 
 
     //To call indpendent listener function at the end, it will go something like this:
