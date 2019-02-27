@@ -52,13 +52,13 @@ int accept_connection(socket_t sock, sockaddr_in_t* addr, int* addr_length)
 }
 
 
-int recv_msg(socket_t sock, char* buffer, int num_bytes)
+int recv_msg(socket_t sock, void* buffer, int num_bytes)
 {
     return recv(sock, buffer, num_bytes, 0);
 }
 
 
-int send_msg(socket_t sock, char* buffer, int num_bytes)
+int send_msg(socket_t sock, void* buffer, int num_bytes)
 {
     return send(sock, buffer, num_bytes, 0);
 }
