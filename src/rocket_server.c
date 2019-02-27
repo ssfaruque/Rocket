@@ -54,10 +54,8 @@ int rocket_server_init(int addr_size, int num_clients)
 
             num_connected_clients++;
 
-            printf("REACHED HERE\n");
-
             /* send the client num to the connected client */
-            int num_bytes_sent = send_msg(server_socket, (char*) &client_num, sizeof(client_num));
+            int num_bytes_sent = send_msg(client_socket, (void*)&client_num, sizeof(int));
 
             printf("Server sent %d bytes to client %d\n", num_bytes_sent, client_num);
 
@@ -65,7 +63,7 @@ int rocket_server_init(int addr_size, int num_clients)
             clientInfos[client_num].client_addr = client_addr;
 
             int received = 0;
-            recv_msg(server_socket, (char*)&received, sizeof(received));
+            recv_msg(server_socket, (void*)&received, sizeof(int));
 
             if(received)
             {

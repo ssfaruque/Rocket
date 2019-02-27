@@ -164,7 +164,7 @@ int rocket_client_init(int addr_size)
     
     // Todo: change master IP address
     const char* SERVER_IP = INADDR_ANY;
-    sockaddr_in_t addr = create_socket_addr(9002, SERVER_IP);
+    sockaddr_in_t addr = create_socket_addr(9002, INADDR_ANY);
 
     /* Attempting to establish a connection on the socket */
     if(connect_socket(master_socket, &addr) == -1)
@@ -174,7 +174,7 @@ int rocket_client_init(int addr_size)
     }
 
     // Retrieve client number from server
-    int num_bytes_received = recv_msg(master_socket, (char*) &client_num, sizeof(client_num)); 
+    int num_bytes_received = recv_msg(master_socket, &client_num, sizeof(client_num)); 
     printf("Client, num bytes received: %d\n", num_bytes_received);
     if(num_bytes_received == -1)
     {

@@ -38,7 +38,7 @@ int main(int argc, char* argv[])
         printf("s_addr: %d\n", s_addr);
         printf("addr_length: %d\n\n", addr_length);
 
-        send_msg(client_socket, (char*) &val, sizeof(val));
+        send_msg(client_socket, &val, sizeof(val));
         val++;
     }
 

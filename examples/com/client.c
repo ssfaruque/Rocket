@@ -31,7 +31,7 @@ int main(int argc, char* argv[])
     int val = -1;
 
     /* read sizeof(val) number of bytes and put bytes into the variable 'val' */
-    recv_msg(network_socket, (char*) &val, sizeof(val));
+    recv_msg(network_socket, &val, sizeof(val));
 
     printf("CLIENT, val: %d\n", val);
 

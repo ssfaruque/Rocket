@@ -1,3 +1,7 @@
 .vscode
 build
 lib
+tests/client
+tests/server
+examples/com/client
+examples/com/server

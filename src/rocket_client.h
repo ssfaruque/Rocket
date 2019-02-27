@@ -1,7 +1,7 @@
-#include "rocket_com.h"
-#include "signal.h"
 #ifndef ROCKET_CLIENT_H
 #define ROCKET_CLIENT_H
+
+#include "com.h"
 
 struct Page;
 
