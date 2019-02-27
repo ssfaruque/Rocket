@@ -158,10 +158,10 @@ int rocket_client_init(int addr_size)
 
 
     // Code: for establishing the communication with the client.
-    socket_t network_socket = create_socket();
+    socket_t master_socket = create_socket();
     //struct Page* page_requested = client_communicate(network_socket);
-    char* page_requested = client_communicate(network_socket);
-    close_socket(network_socket);
+    char* page_requested = client_communicate(master_socket);
+    close_socket(master_socket);
     printf("%p",page_requested);
 
 
