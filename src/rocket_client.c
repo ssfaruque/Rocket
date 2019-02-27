@@ -230,27 +230,5 @@ int rocket_dealloc(void* address)
 
 char* client_communicate(socket_t network_socket)
 { 
-    // Todo: change master IP address
-    char* MASTER_IP = INADDR_ANY;
-    sockaddr_in_t addr = create_socket_addr(9002, MASTER_IP);
-
-    /* attempting to establish a connection on the socket */
-    int connection_status = connect_socket(network_socket, &addr);
-
-    if(connection_status == -1)
-    {
-        printf("Could not connect!\n");
-        exit(1);
-    }
-
-    //struct Page* page_request = NULL;
-    int client_number = -1;
-
-    /* read sizeof(client_number) number of bytes and put bytes into the variable 'client_number' */
-    recv_msg(network_socket, (char*) &client_number, sizeof(client_number));
-    
-    printf("client number: %d\n", client_number);
-    
-
-    return &client_number;  
+    return 0;  
 }
