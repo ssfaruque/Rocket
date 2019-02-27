@@ -1,11 +1,24 @@
 CC := gcc
-CFLAGS := -Wall -Werror 
-#LIBS := -lrdsm
+CFLAGS := -Wall -Werror
+LIBS := -lrdsm
+LIBPATHS := -L ../lib
+INCLUDEPATHS := -I ../src
+TARGETS := client server
 
-TARGETS := client server 
+.PHONY := buildlib all clean
 
-all: $(TARGETS)
+all: buildlib $(TARGETS)
 
+client: client.c 
+	@echo "Building client program..."
+	$(CC) $(CFLAGS) $^ $(LIBPATHS) $(LIBS) $(INCLUDEPATHS) -o $@
+
+server: server.c 
+	@echo "Building server program..."
+	$(CC) $(CFLAGS) $^ $(LIBPATHS) $(LIBS) $(INCLUDEPATHS) -o $@
+
+buildlib:
+	make -C ..
 
 clean:
 	$(RM) $(TARGETS)

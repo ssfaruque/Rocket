@@ -16,6 +16,7 @@ typedef struct
 
 
 int num_connected_clients = 0;
+
 socket_t server_socket;
 ClientInfo* clientInfos = NULL;
 
@@ -45,24 +46,30 @@ int rocket_server_init(int addr_size, int num_clients)
 
             if(client_socket == -1)
             {
-                printf("Failed to connect!\n");
+                printf("Server failed to connect to client %d!\n", client_num);
+                return -1;
             }
+
+            printf("Connected to client %d!\n", client_num);
 
             num_connected_clients++;
 
+            printf("REACHED HERE\n");
+
             /* send the client num to the connected client */
-            send_msg(server_socket, (char*) &client_num, sizeof(client_num));
+            int num_bytes_sent = send_msg(server_socket, (char*) &client_num, sizeof(client_num));
+
+            printf("Server sent %d bytes to client %d\n", num_bytes_sent, client_num);
 
             clientInfos[client_num].client_num  = client_num;
             clientInfos[client_num].client_addr = client_addr;
 
             int received = 0;
-
             recv_msg(server_socket, (char*)&received, sizeof(received));
 
             if(received)
             {
-                printf("Client %d has received a message from the server\n", client_num);
+                printf("Client %d has received its client number from the server\n", client_num);
             }
         }
     }

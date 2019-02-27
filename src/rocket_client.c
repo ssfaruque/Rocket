@@ -16,7 +16,7 @@ unsigned char* shared_mem;
 int master_socket; //Initialize this in init Lesley/Shivang
 int slave_socket; //Initialize this in init Lesley/Shivang
 
-int client_num   = -1;
+int client_num = -1;
 
 /* gets initialized in the init function,
    address_size corresponds to size of the client's portion of
@@ -25,6 +25,8 @@ int client_num   = -1;
 int address_size = 0;  
 
 pthread_mutex_t *lock;
+struct sigaction sa;
+
 
 // For now setting it to be the start of user space (0x40000000). This is to be used as input for mmap among other things
 void* get_base_address()
@@ -131,6 +133,15 @@ void sigfault_handler(int sig, siginfo_t *info, void *ucontext)
 }
 
 
+// Setting up the signal catching code
+void setup_signal_handler()
+{
+    sa.sa_sigaction = sigfault_handler;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = SA_SIGINFO;
+}
+
+
 int rocket_client_init(int addr_size)
 {
     address_size = addr_size;
@@ -138,52 +149,54 @@ int rocket_client_init(int addr_size)
     // Using mmap for mapping the addresses-- private copy-on-write mapping
     shared_mem = mmap(get_respective_client_base_address(), addr_size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 
-
-    // Setting up the signal catching code
-    struct sigaction sa;
-    sa.sa_sigaction = sigfault_handler;
-    sigemptyset(&sa.sa_mask);
-    sa.sa_flags = SA_SIGINFO;
+    setup_signal_handler();
 
     // TODO: Assigning default pages to master and slave nodes to start with (need to demarcate them somehow), socket code goes here for all communication, thread running function that responds to page requests on both master and slave nodes runs here too.
-
 
     /*
         Steps:
         1) Retrieve client number from server
         2) Send server an acknowledgement
-
     */
-    // for establishing the communication with the server.
+
+    // for establishing the communication with the server
     master_socket = create_socket();    
     
     // Todo: change master IP address
-    char* MASTER_IP = INADDR_ANY;
-    sockaddr_in_t addr = create_socket_addr(9002, MASTER_IP);
+    const char* SERVER_IP = INADDR_ANY;
+    sockaddr_in_t addr = create_socket_addr(9002, SERVER_IP);
 
     /* Attempting to establish a connection on the socket */
-    int connection_status = connect_socket(master_socket, &addr);
-
-    if(connection_status == -1)
+    if(connect_socket(master_socket, &addr) == -1)
     {
-        printf("Could not connect!\n");
-        exit(1);
+        printf("Client could not connect to server with IP: %s!\n", SERVER_IP);
+        return -1;
     }
 
     // Retrieve client number from server
-    recv_msg(master_socket, (char*) &client_num, sizeof(client_num));
-    printf("client number: %d\n", client_num);
+    int num_bytes_received = recv_msg(master_socket, (char*) &client_num, sizeof(client_num)); 
+    printf("Client, num bytes received: %d\n", num_bytes_received);
+    if(num_bytes_received == -1)
+    {
+        printf("Client failed to its receive client number from the server!\n");
+        return -1;
+    }
+
+    printf("Client received client number: %d\n", client_num);
    
     // Send server an acknowledgement
-    int SUCCESS = 1;
-    send_msg(master_socket, (char*) &SUCCESS, sizeof(SUCCESS)); 
+    int ack = 1;
+    if(send_msg(master_socket, (char*) &ack, sizeof(ack)) == -1)
+    {
+        printf("Client %d failed to send its acknowledgement to the client!\n", client_num);
+        return -1;
+    }
 
+    printf("Client %d sent its acknowledgement to the server!\n", client_num);
 
     //To call indpendent listener function at the end, it will go something like this:
     //pthread_t thread
     //indp_lisn = pthread_create(&thread, NULL, independent_listener, (void*) fd returned from accept syscall);
-
-    
     return 0;
 }
 
