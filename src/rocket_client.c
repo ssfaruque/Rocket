@@ -154,15 +154,29 @@ int rocket_client_init(int addr_size)
         2) Send server an acknowledgement
 
     */
+    // for establishing the communication with the server.
+    socket_t master_socket = create_socket();    
+    
+    // Todo: change master IP address
+    char* MASTER_IP = INADDR_ANY;
+    sockaddr_in_t addr = create_socket_addr(9002, MASTER_IP);
 
+    /* Attempting to establish a connection on the socket */
+    int connection_status = connect_socket(network_socket, &addr);
 
+    if(connection_status == -1)
+    {
+        printf("Could not connect!\n");
+        exit(1);
+    }
 
-    // Code: for establishing the communication with the client.
-    socket_t master_socket = create_socket();
-    //struct Page* page_requested = client_communicate(network_socket);
-    char* page_requested = client_communicate(master_socket);
-    close_socket(master_socket);
-    printf("%p",page_requested);
+    // Retrieve client number from server
+    recv_msg(network_socket, (char*) &client_num, sizeof(client_number));
+    printf("client number: %d\n", client_num);
+   
+    // Send server an acknowledgement
+    int SUCCESS = 1;
+    send_msg(network_socket, (char*) &SUCCESS, sizeof(SUCCESS)); 
 
 
     //To call indpendent listener function at the end, it will go something like this:
@@ -176,6 +190,7 @@ int rocket_client_init(int addr_size)
 
 int rocket_client_exit()
 {
+    close_socket(master_socket);
     return 0;
 }
 
@@ -215,8 +230,9 @@ int rocket_dealloc(void* address)
 
 char* client_communicate(socket_t network_socket)
 { 
-    
-    sockaddr_in_t addr = create_socket_addr(9002, INADDR_ANY);
+    // Todo: change master IP address
+    char* MASTER_IP = INADDR_ANY;
+    sockaddr_in_t addr = create_socket_addr(9002, MASTER_IP);
 
     /* attempting to establish a connection on the socket */
     int connection_status = connect_socket(network_socket, &addr);
@@ -228,11 +244,13 @@ char* client_communicate(socket_t network_socket)
     }
 
     //struct Page* page_request = NULL;
-    char* page_request = NULL;
+    int client_number = -1;
 
-    /* read sizeof(val) number of bytes and put bytes into the variable 'val' */
-    //recv_msg(network_socket, (Page*) page_request, sizeof(page_request));
-    recv_msg(network_socket, page_request, sizeof(page_request));
+    /* read sizeof(client_number) number of bytes and put bytes into the variable 'client_number' */
+    recv_msg(network_socket, (char*) &client_number, sizeof(client_number));
     
-    return page_request;  
+    printf("client number: %d\n", client_number);
+    
+
+    return &client_number;  
 }
