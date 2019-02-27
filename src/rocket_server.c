@@ -63,7 +63,7 @@ int rocket_server_init(int addr_size, int num_clients)
             clientInfos[client_num].client_addr = client_addr;
 
             int received = 0;
-            recv_msg(server_socket, (void*)&received, sizeof(int));
+            recv_msg(client_socket, (void*)&received, sizeof(int));
 
             if(received)
             {
