@@ -44,7 +44,7 @@ void server_communicate(socket_t server_socket)
     listen_for_connections(server_socket, 3);
 
     int client_socket;
-    int val = 0;
+    char* val = NULL;
 
     /* 'accept_connection' function will write to these if specified */
     sockaddr_in_t client_addr;
@@ -64,7 +64,7 @@ void server_communicate(socket_t server_socket)
         printf("addr_length: %d\n\n", addr_length);
 
         send_msg(client_socket, (char*) &val, sizeof(val));
-        val++;
+        //val++;
     }
     close_socket(server_socket);
 }
