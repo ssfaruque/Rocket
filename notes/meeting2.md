@@ -1,6 +1,8 @@
 # Trello board
 https://trello.com/b/DGMnzneN/rocket-project
 
+
+#meeting2
 # What we have done
 1. implementing communication layer using socket
 2. DSM layer planning   
@@ -14,3 +16,7 @@ https://trello.com/b/DGMnzneN/rocket-project
    * memory allocation (mmap)
 # Any issues we're having:
    * Figuring out DSM mechanism and break tasks down
+   
+   
+   #meeting3
+   
