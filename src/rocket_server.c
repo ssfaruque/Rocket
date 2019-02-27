@@ -4,21 +4,71 @@
 #include <unistd.h>
 #include <sys/mman.h>
 #include <string.h>
+
 #include "page.h"
 #include "rocket_server.h"
 
-int rocket_server_init(int addr_size)
+typedef struct
+{
+    int client_num;
+    sockaddr_in_t client_addr;
+} ClientInfo;
+
+
+int num_connected_clients = 0;
+socket_t server_socket;
+ClientInfo* clientInfos = NULL;
+
+
+int rocket_server_init(int addr_size, int num_clients)
 {
     static int init = 0;
 
     if(!init)
     {
         init = 1;
+        
+        server_socket = create_socket();
+        sockaddr_in_t addr = create_socket_addr(9002, INADDR_ANY);
+        bind_socket(server_socket, &addr);
+        listen_for_connections(server_socket, num_clients);
 
+        clientInfos = (ClientInfo*) malloc(sizeof(ClientInfo) * num_clients);
+        int client_num;
+
+        for(client_num = 0; client_num < num_clients; client_num++)
+        {
+            /* connect to a client */
+            sockaddr_in_t client_addr;
+            int addr_length;
+            socket_t client_socket = accept_connection(server_socket, &client_addr, &addr_length);
+
+            if(client_socket == -1)
+            {
+                printf("Failed to connect!\n");
+            }
+
+            num_connected_clients++;
+
+            /* send the client num to the connected client */
+            send_msg(server_socket, (char*) &client_num, sizeof(client_num));
+
+            clientInfos[client_num].client_num  = client_num;
+            clientInfos[client_num].client_addr = client_addr;
+
+            int received = 0;
+
+            recv_msg(server_socket, (char*)&received, sizeof(received));
+
+            if(received)
+            {
+                printf("Client %d has received a message from the server\n", client_num);
+            }
+        }
     }
     
-    int server_socket = create_socket();
-    server_communicate(server_socket);
+    // int server_socket = create_socket();
+    // server_communicate(server_socket);
     
     return 0;
 }
@@ -26,7 +76,6 @@ int rocket_server_init(int addr_size)
 
 int rocket_server_exit()
 {
-
     return 0;
 }
 

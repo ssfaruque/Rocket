@@ -1,8 +1,10 @@
 #ifndef ROCKET_SERVER_H
 #define ROCKET_SERVER_H
+
 #include "signal.h"
 #include "rocket_com.h"
-int rocket_server_init(int addr_size);
+
+int rocket_server_init(int addr_size, int num_clients);
 
 int rocket_server_exit();
 

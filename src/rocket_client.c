@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <sys/mman.h>
 #include <string.h>
+
 #include "page.h"
 #include "rocket_client.h"
 
@@ -15,6 +16,14 @@ unsigned char* shared_mem;
 int master_socket; //Initialize this in init Lesley/Shivang
 int slave_socket; //Initialize this in init Lesley/Shivang
 
+int client_num   = -1;
+
+/* gets initialized in the init function,
+   address_size corresponds to size of the client's portion of
+   the shared memory and not the total shared memory
+*/
+int address_size = 0;  
+
 pthread_mutex_t *lock;
 
 // For now setting it to be the start of user space (0x40000000). This is to be used as input for mmap among other things
@@ -22,6 +31,39 @@ void* get_base_address()
 { 
     return (void*)(1<<30);
 }
+
+
+/* retrieves the starting address of the memory region corresponding 
+   to the particular client
+*/
+void* get_respective_client_base_address()
+{
+    int address_offset = (client_num * address_size);
+    return get_base_address() + address_offset;
+}
+
+
+/* Returns 1 if address is out of bounds for the respective client
+   and 0 if it is within bounds */
+int is_out_of_bounds(char* address)
+{
+    if(address == NULL)
+    {
+        printf("Address is NULL\n");
+        return 1;
+    }
+
+    if(address < get_respective_client_base_address() || address > get_respective_client_base_address() + address_size)
+    {
+        printf("Address %x is out of bounds for client %d\n", address, client_num);
+        return 1;
+    }
+
+    printf("Address %x within the bounds for client %d\n", address, client_num);
+    return 0;
+}
+
+
 
 //Defined this way because it is going to be running as a thread independently where void* param will be the accepted socket file descriptor
 void* independent_listener (void* param) 
@@ -91,8 +133,11 @@ void sigfault_handler(int sig, siginfo_t *info, void *ucontext)
 
 int rocket_client_init(int addr_size)
 {
+    address_size = addr_size;
+
     // Using mmap for mapping the addresses-- private copy-on-write mapping
-    shared_mem = mmap(get_base_address(), addr_size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    shared_mem = mmap(get_respective_client_base_address(), addr_size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+
 
     // Setting up the signal catching code
     struct sigaction sa;
@@ -101,6 +146,15 @@ int rocket_client_init(int addr_size)
     sa.sa_flags = SA_SIGINFO;
 
     // TODO: Assigning default pages to master and slave nodes to start with (need to demarcate them somehow), socket code goes here for all communication, thread running function that responds to page requests on both master and slave nodes runs here too.
+
+
+    /*
+        Steps:
+        1) Retrieve client number from server
+        2) Send server an acknowledgement
+
+    */
+
 
 
     // Code: for establishing the communication with the client.
