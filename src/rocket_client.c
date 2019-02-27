@@ -39,7 +39,7 @@ void* get_base_address()
 void* get_respective_client_base_address()
 {
     int address_offset = (client_num * address_size);
-    return get_base_address() + address_offset;
+    return ((char*)get_base_address()) + address_offset;
 }
 
 
@@ -53,13 +53,13 @@ int is_out_of_bounds(char* address)
         return 1;
     }
 
-    if(address < get_respective_client_base_address() || address > get_respective_client_base_address() + address_size)
+    if(address < ((char*)get_respective_client_base_address()) || address > ((char*)get_respective_client_base_address()) + address_size)
     {
-        printf("Address %x is out of bounds for client %d\n", address, client_num);
+        printf("Address %p is out of bounds for client %d\n", address, client_num);
         return 1;
     }
 
-    printf("Address %x within the bounds for client %d\n", address, client_num);
+    printf("Address %p within the bounds for client %d\n", address, client_num);
     return 0;
 }
 
@@ -171,7 +171,7 @@ int rocket_client_init(int addr_size)
     }
 
     // Retrieve client number from server
-    recv_msg(master_socket, (char*) &client_num, sizeof(client_number));
+    recv_msg(master_socket, (char*) &client_num, sizeof(client_num));
     printf("client number: %d\n", client_num);
    
     // Send server an acknowledgement
