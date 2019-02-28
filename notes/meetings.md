@@ -1,0 +1,38 @@
+# Trello board
+https://trello.com/b/DGMnzneN/rocket-project
+
+# meeting3
+# What we have done.
+ 1. Communication b/w server and client.
+ 2. Initialization of DSM system
+ 3. Sig fault handling
+ 4. Listening for the page request.
+
+# What we're going to do this week 
+ 1. Integrating Sig fault handling with server client communication.
+ 
+# Any issues we're having:
+ 1. Two way communication b/w server and client
+     a) server to client: 1:m communication.
+     b) client to server: 1:1 communication.
+ 2. Making sure its possible for clients with different ip address can communicate with server and vice versa.
+ 
+
+# meeting2
+# What we have done
+1. implementing communication layer using socket
+2. DSM layer planning   
+   shared memory mechanism
+# What we're going to do this week
+   boilerplate code for DSM layer 
+   * transfering ownership of pages(mprotect) 
+   * handle sigfaults 
+   * signal handling function
+   * listening port for page requests
+   * memory allocation (mmap)
+# Any issues we're having:
+   * Figuring out DSM mechanism and break tasks down
+   
+   
+
+   
