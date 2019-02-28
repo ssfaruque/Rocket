@@ -10,6 +10,7 @@ https://trello.com/b/DGMnzneN/rocket-project
 
 # What we're going to do this week 
  1. Integrating Sig fault handling with server client communication.
+ 2. Write tests that test the core DSM functionalities.
  
 # Any issues we're having:
  1. Two way communication b/w server and client
