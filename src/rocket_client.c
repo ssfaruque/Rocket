@@ -164,10 +164,10 @@ int rocket_client_init(int addr_size)
     
     // Todo: change master IP address
     const char* SERVER_IP = INADDR_ANY;
-    sockaddr_in_t addr = create_socket_addr(9002, INADDR_ANY);
+    sockaddr_in_t master_addr = create_socket_addr(9002, INADDR_ANY);
 
     /* Attempting to establish a connection on the socket */
-    if(connect_socket(master_socket, &addr) == -1)
+    if(connect_socket(master_socket, &master_addr) == -1)
     {
         printf("Client could not connect to server with IP: %s!\n", SERVER_IP);
         return -1;
@@ -194,9 +194,27 @@ int rocket_client_init(int addr_size)
 
     printf("Client %d sent its acknowledgement to the server!\n", client_num);
 
+
+    // listening for server request
+    slave_socket = create_socket();
+    const char* SLAVE_IP = INADDR_ANY; // TODO: change slave IP address
+    sockaddr_in_t slave_addr = create_socket_addr(9002, SLAVE_IP);
+    bind_socket(slave_socket, &slave_addr);
+    listen_for_connections(slave_socket, 1);
+    
+    sockaddr_in_t addr;
+    int addr_length;
+    socket_t network_socket = accept_connection(slave_socket, &addr, &addr_length);
+
+    if (network_socket == -1) {
+        printf("Client failed to accept connection.");
+    }
+    
+    // TODO: 
     //To call indpendent listener function at the end, it will go something like this:
     //pthread_t thread
-    //indp_lisn = pthread_create(&thread, NULL, independent_listener, (void*) fd returned from accept syscall);
+    // indp_lisn = pthread_create(&thread, NULL, independent_listener, (void*) fd returned from accept syscall);
+
     return 0;
 }
 
