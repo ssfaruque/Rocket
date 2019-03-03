@@ -118,6 +118,7 @@ void sigfault_handler(int sig, siginfo_t *info, void *ucontext)
     mprotect(curr_addr, PAGE_SIZE, PROT_WRITE);
     memcpy(curr_addr, data, PAGE_SIZE);
     pthread_mutex_unlock(&lock[page_number]);
+
 }
 
 
@@ -129,9 +130,6 @@ void setup_signal_handler()
     sa.sa_flags = SA_SIGINFO;
 }
 
-
-
-int setup_
 
 
 
