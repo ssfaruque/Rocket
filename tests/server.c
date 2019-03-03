@@ -16,8 +16,6 @@ int main(int argc, char* argv[])
     }
 
 
-
-
     rocket_server_exit();
     
     return 0;

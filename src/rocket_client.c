@@ -6,33 +6,25 @@
 #include <sys/mman.h>
 #include <string.h>
 
+#include "rocket_core.h"
 #include "page.h"
-#include "rocket_client.h"
+#include "com.h"
+
 
 #define BASE_BUFFER_SIZE 1024
 
-/* The shared memory that each client will have */
-unsigned char* shared_mem;
-int master_socket; //Initialize this in init Lesley/Shivang
-int slave_socket; //Initialize this in init Lesley/Shivang
+/* The shared memory that each client and serverwill have */
+SharedMemory* sharedMemory = NULL;
 
-int client_num = -1;
-
-/* gets initialized in the init function,
-   address_size corresponds to size of the client's portion of
-   the shared memory and not the total shared memory
-*/
-int address_size = 0;  
-
-pthread_mutex_t *lock;
-struct sigaction sa;
+int master_socket = -1; // used to read from server
+int slave_socket  = -1; // used to send to server
+int num_clients   = -1; // total number of clients in the application
+int client_num    = -1; // client id corresponding to this client, starts from 0
+int address_size  = -1; // total size of the shared memory in bytes  
 
 
-// For now setting it to be the start of user space (0x40000000). This is to be used as input for mmap among other things
-void* get_base_address()
-{ 
-    return (void*)(1<<30);
-}
+pthread_mutex_t *lock; // used for independent listender
+struct sigaction sa;   // used for signal handling
 
 
 /* retrieves the starting address of the memory region corresponding 
@@ -66,7 +58,6 @@ int is_out_of_bounds(char* address)
 }
 
 
-
 //Defined this way because it is going to be running as a thread independently where void* param will be the accepted socket file descriptor
 void* independent_listener (void* param) 
 {
@@ -91,7 +82,6 @@ void* independent_listener (void* param)
       pthread_mutex_unlock(&lock[page_number]);
 
     }
-  
 }
 
 // Programmed this like on the sigaction manpage: http://man7.org/linux/man-pages/man2/sigaction.2.html
@@ -99,9 +89,9 @@ void* independent_listener (void* param)
 void sigfault_handler(int sig, siginfo_t *info, void *ucontext)
 {
     char *curr_addr = info->si_addr;
-    char *base_addr;
-    void *temp = get_base_address();
-    base_addr = (char *)temp;
+    void *temp      = get_base_address();
+    char *base_addr = (char*) temp;
+
     int page_number = ((int)(curr_addr - base_addr)) / PAGE_SIZE;
     
     pthread_mutex_lock(&lock[page_number]);
@@ -109,27 +99,25 @@ void sigfault_handler(int sig, siginfo_t *info, void *ucontext)
     snprintf(buf, BASE_BUFFER_SIZE, "%d", page_number);
     
     if(send_msg(master_socket, buf, strlen(buf)) != 0)
-      {
-	printf("Could not send message for page request!\n");
-	exit(1);
-      }
+    {
+        printf("Could not send message for page request!\n");
+        exit(1);
+    }
 
     char data[PAGE_SIZE];
 
     for(int total = PAGE_SIZE, index = 0; total != 0; )
-      {
-	int val = recv_msg(master_socket, &data[index], total);
-	total = total - val;
-	index = index + val;
-      }
+    {
+        int val = recv_msg(master_socket, &data[index], total);
+        total = total - val;
+        index = index + val;
+    }
 
     //void* page_addr = get_base_address() + (page_number*PAGE_SIZE);
 
     mprotect(curr_addr, PAGE_SIZE, PROT_WRITE);
     memcpy(curr_addr, data, PAGE_SIZE);
     pthread_mutex_unlock(&lock[page_number]);
-    
-    
 }
 
 
@@ -142,27 +130,31 @@ void setup_signal_handler()
 }
 
 
-int rocket_client_init(int addr_size)
+
+int setup_
+
+
+
+
+int rocket_client_init(int addr_size, int number_of_clients)
 {
     address_size = addr_size;
+    num_clients = number_of_clients;
 
     // Using mmap for mapping the addresses-- private copy-on-write mapping
-    shared_mem = mmap(get_respective_client_base_address(), addr_size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    shared_mem = mmap(get_base_address(), address_size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+
+    if(shared_mem == MAP_FAILED)
+    {
+        printf("Failed to map shared memory of size %d bytes\n", address_size);
+        exit(1);
+    }
 
     setup_signal_handler();
 
     // TODO: Assigning default pages to master and slave nodes to start with (need to demarcate them somehow), socket code goes here for all communication, thread running function that responds to page requests on both master and slave nodes runs here too.
 
-    /*
-        Steps:
-        1) Retrieve client number from server
-        2) Send server an acknowledgement
-    */
-
-    // for establishing the communication with the server
-    master_socket = create_socket();    
-    
-    // Todo: change master IP address
+    master_socket = create_socket();        
     const char* SERVER_IP = INADDR_ANY;
     sockaddr_in_t master_addr = create_socket_addr(9002, INADDR_ANY);
 
@@ -178,7 +170,7 @@ int rocket_client_init(int addr_size)
     printf("Client, num bytes received: %d\n", num_bytes_received);
     if(num_bytes_received == -1)
     {
-        printf("Client failed to its receive client number from the server!\n");
+        printf("Client failed to receive its client number from the server!\n");
         return -1;
     }
 
@@ -193,7 +185,6 @@ int rocket_client_init(int addr_size)
     }
 
     printf("Client %d sent its acknowledgement to the server!\n", client_num);
-
 
     // listening for server request
     slave_socket = create_socket();

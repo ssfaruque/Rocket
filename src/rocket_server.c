@@ -5,20 +5,37 @@
 #include <sys/mman.h>
 #include <string.h>
 
+#include "rocket_core.h"
 #include "page.h"
-#include "rocket_server.h"
-
-typedef struct
-{
-    int client_num;
-    sockaddr_in_t client_addr;
-} ClientInfo;
+#include "com.h"
 
 
 int num_connected_clients = 0;
-
 socket_t server_socket;
-ClientInfo* clientInfos = NULL;
+
+
+
+
+
+SharedMemory* sharedMemory = NULL;
+
+
+void add_reader_to_page(SharedMemory* mem, ClientInfo* clientInfo, int page_num)
+{
+}
+
+
+
+void give_exclusive_write_access(SharedMemory* mem, int client_num)
+{
+
+}
+
+
+void invalidate_readers_on_page(SharedMemory* mem, int page_num)
+{   
+     
+}
 
 
 int rocket_server_init(int addr_size, int num_clients)
@@ -28,13 +45,17 @@ int rocket_server_init(int addr_size, int num_clients)
     if(!init)
     {
         init = 1;
+
+        /* initializing shared memory */
+        sharedMemory = create_shared_memory(addr_size / PAGE_SIZE);
+        init_shared_memory(sharedMemory);
         
+        /* setting up server socket */
         server_socket = create_socket();
         sockaddr_in_t addr = create_socket_addr(9002, INADDR_ANY);
         bind_socket(server_socket, &addr);
         listen_for_connections(server_socket, num_clients);
 
-        clientInfos = (ClientInfo*) malloc(sizeof(ClientInfo) * num_clients);
         int client_num;
 
         for(client_num = 0; client_num < num_clients; client_num++)
@@ -59,22 +80,17 @@ int rocket_server_init(int addr_size, int num_clients)
 
             printf("Server sent %d bytes to client %d\n", num_bytes_sent, client_num);
 
-            clientInfos[client_num].client_num  = client_num;
-            clientInfos[client_num].client_addr = client_addr;
-
             int received = 0;
             recv_msg(client_socket, (void*)&received, sizeof(int));
 
             if(received)
             {
                 printf("Client %d has received its client number from the server\n", client_num);
+                printf("received: %d\n", received);
             }
         }
     }
-    
-    // int server_socket = create_socket();
-    // server_communicate(server_socket);
-    
+        
     return 0;
 }
 
