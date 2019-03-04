@@ -34,7 +34,7 @@ void invalidate_readers_on_page(SharedMemory* mem, int page_num)
 }
 
 
-void init_server_socket(int num_clients)
+void init_server_socket(int num_clients, int port, const char* IPV4_ADDR)
 {
     server_socket = create_socket();
 
@@ -44,7 +44,7 @@ void init_server_socket(int num_clients)
         exit(1);
     }
 
-    sockaddr_in_t addr = create_socket_addr(9002, INADDR_ANY);
+    sockaddr_in_t addr = create_socket_addr(port, IPV4_ADDR);
 
     if(bind_socket(server_socket, &addr) == -1)
     {
@@ -62,7 +62,9 @@ void init_server_socket(int num_clients)
 
 void setup_client_connections(int num_clients)
 {
-    init_server_socket(num_clients);
+    clientInfos  = (ClientInfo*) malloc(sizeof(ClientInfo) * num_clients);
+
+    init_server_socket(num_clients, 9002, INADDR_ANY);
 
     int client_num;
 
@@ -79,28 +81,32 @@ void setup_client_connections(int num_clients)
             exit(1);
         }
 
+        clientInfos[client_num].client_num    = client_num;
+        clientInfos[client_num].client_socket = client_socket;
+        clientInfos[client_num].client_addr   = client_addr;
+
         printf("Connected to client %d!\n", client_num);
 
         /* send the client num to the connected client */
         int num_bytes_sent = send_msg(client_socket, (void*)&client_num, sizeof(client_num));
 
-        printf("Server sent %d bytes to client %d\n", num_bytes_sent, client_num);
+        if(num_bytes_sent <= 0 )
+        {
+            printf("Server failed to send client number %d to the respective client\n", client_num);
+            exit(1);
+        }
 
         /* receive an acknowledgement from the client */
         int received = 0;
         recv_msg(client_socket, (void*)&received, sizeof(int));
-
-        if(received)
-        {
-            printf("Client %d has received its client number from the server\n", client_num);
-            printf("received: %d\n", received);
-        }
 
         if(!received)
         {
             printf("Server failed to receive an acknowledgement from client %d\n", client_num);
             exit(1);
         }
+
+        printf("<client %d> - acknowledged: %d\n", client_num, received);
 
         num_connected_clients++;
     }
@@ -115,8 +121,7 @@ int rocket_server_init(int addr_size, int num_clients)
     {
         init = 1;
 
-        sharedMemory = create_shared_memory(addr_size / PAGE_SIZE);
-        clientInfos  = (ClientInfo*) malloc(sizeof(ClientInfo) * num_clients);
+        sharedMemory = create_shared_memory(addr_size / PAGE_SIZE, num_clients);
         setup_client_connections(num_clients);
     }
         

@@ -1,5 +1,7 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/mman.h>
 
 #include "rocket_core.h"
 
@@ -17,18 +19,26 @@ void init_shared_memory(SharedMemory* mem)
 }
 
 
-SharedMemory* create_shared_memory(int number_of_pages) 
+SharedMemory* create_shared_memory(int number_of_pages, int number_of_clients) 
 {
-    SharedMemory* mem = (SharedMemory*) malloc(sizeof(SharedMemory));
-    mem->num_pages = number_of_pages;
-    mem->pages = (Page*) malloc(sizeof(Page) * number_of_pages);
+    SharedMemory* mem   = (SharedMemory*)  malloc(sizeof(SharedMemory));
     mem->pageOwnerships = (PageOwnership*) malloc(sizeof(PageOwnership) * number_of_pages);
+    mem->num_pages      = number_of_pages;
+    mem->num_clients    = number_of_clients;
 
     int i;
     for(i = 0; i < number_of_pages; ++i)
     {
-        mem->pageOwnerships->clientExclusiveWriter = NULL;
-        mem->pageOwnerships->clientReaders         = NULL;
+        mem->pageOwnerships[i].clientExclusiveWriter = NULL;
+        mem->pageOwnerships[i].clientReaders         = NULL;
+    }
+
+    mem->pages = mmap(get_base_address(), number_of_pages * PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+
+    if(mem->pages == MAP_FAILED)
+    {
+        printf("Failed to map shared memory of size %d bytes\n", number_of_pages * PAGE_SIZE);
+        exit(1);
     }
 
     init_shared_memory(mem);

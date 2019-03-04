@@ -11,6 +11,7 @@
 typedef struct
 {
     int            num_pages;
+    int            num_clients;
     Page*          pages;
     PageOwnership* pageOwnerships;
 } SharedMemory;
@@ -18,7 +19,7 @@ typedef struct
 
 void* get_base_address();
 
-SharedMemory* create_shared_memory(int number_of_pages); 
+SharedMemory* create_shared_memory(int number_of_pages, int number_of_clients); 
 
 void init_shared_memory(SharedMemory* mem);
 

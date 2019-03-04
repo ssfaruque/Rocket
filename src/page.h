@@ -8,14 +8,15 @@
 
 typedef struct
 {
-    int client_num;
+    int           client_num;
+    socket_t      client_socket;
     sockaddr_in_t client_addr;
 } ClientInfo;
 
 
 typedef struct
 {
-    int num_readers;
+    int         num_readers;
     ClientInfo* readers;
 } ClientReaders;
 
@@ -28,7 +29,7 @@ typedef struct
 
 typedef struct 
 {
-    ClientReaders* clientReaders;
+    ClientReaders*         clientReaders;
     ClientExclusiveWriter* clientExclusiveWriter;
 } PageOwnership;
 
@@ -37,12 +38,6 @@ typedef struct
 {
     unsigned char bytes[PAGE_SIZE];
 } Page;
-
-
-
-
-
-
 
 
 #endif  // PAGE_H

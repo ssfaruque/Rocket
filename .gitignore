@@ -3,5 +3,6 @@ build
 lib
 tests/client
 tests/server
+tests/list/list_test
 examples/com/client
 examples/com/server
