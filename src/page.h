@@ -5,13 +5,6 @@
 
 #define PAGE_SIZE 4096
 
-enum PagePermission
-{
-    PAGE_CONCURRENT_READ,
-    PAGE_EXCLUSIVE_WRITE,
-    PAGE_PERMISSION_NONE
-};
-
 
 typedef struct
 {
@@ -33,10 +26,15 @@ typedef struct
 } ClientExclusiveWriter;
 
 
-typedef struct Page 
+typedef struct 
 {
     ClientReaders* clientReaders;
     ClientExclusiveWriter* clientExclusiveWriter;
+} PageOwnership;
+
+
+typedef struct
+{
     unsigned char bytes[PAGE_SIZE];
 } Page;
 

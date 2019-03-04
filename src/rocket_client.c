@@ -13,7 +13,7 @@
 
 #define BASE_BUFFER_SIZE 1024
 
-/* The shared memory that each client and serverwill have */
+/* The shared memory that each client and server will have */
 SharedMemory* sharedMemory = NULL;
 
 int master_socket = -1; // used to read from server
@@ -131,22 +131,19 @@ void setup_signal_handler()
 }
 
 
-
-
-
 int rocket_client_init(int addr_size, int number_of_clients)
 {
     address_size = addr_size;
     num_clients = number_of_clients;
 
     // Using mmap for mapping the addresses-- private copy-on-write mapping
-    shared_mem = mmap(get_base_address(), address_size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    //shared_mem = mmap(get_base_address(), address_size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 
-    if(shared_mem == MAP_FAILED)
-    {
-        printf("Failed to map shared memory of size %d bytes\n", address_size);
-        exit(1);
-    }
+    // if(shared_mem == MAP_FAILED)
+    // {
+    //     printf("Failed to map shared memory of size %d bytes\n", address_size);
+    //     exit(1);
+    // }
 
     setup_signal_handler();
 

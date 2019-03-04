@@ -11,19 +11,15 @@
 
 
 int num_connected_clients = 0;
-socket_t server_socket;
+socket_t server_socket    = -1;
 
-
-
-
-
+ClientInfo* clientInfos    = NULL;
 SharedMemory* sharedMemory = NULL;
 
 
 void add_reader_to_page(SharedMemory* mem, ClientInfo* clientInfo, int page_num)
 {
 }
-
 
 
 void give_exclusive_write_access(SharedMemory* mem, int client_num)
@@ -38,6 +34,79 @@ void invalidate_readers_on_page(SharedMemory* mem, int page_num)
 }
 
 
+void init_server_socket(int num_clients)
+{
+    server_socket = create_socket();
+
+    if(server_socket == -1)
+    {
+        printf("Failed to create server socket!\n");
+        exit(1);
+    }
+
+    sockaddr_in_t addr = create_socket_addr(9002, INADDR_ANY);
+
+    if(bind_socket(server_socket, &addr) == -1)
+    {
+        printf("Failed to bind server socket!\n");
+        exit(1);
+    }
+
+    if(listen_for_connections(server_socket, num_clients) == -1)
+    {
+        printf("Failed to setup listening for connections!\n");
+        exit(1);
+    }
+}
+
+
+void setup_client_connections(int num_clients)
+{
+    init_server_socket(num_clients);
+
+    int client_num;
+
+    for (client_num = 0; client_num < num_clients; client_num++)
+    {
+        /* connect to a client */
+        sockaddr_in_t client_addr;
+        int addr_length;
+        socket_t client_socket = accept_connection(server_socket, &client_addr, &addr_length);
+
+        if (client_socket == -1)
+        {
+            printf("Server failed to connect to client %d!\n", client_num);
+            exit(1);
+        }
+
+        printf("Connected to client %d!\n", client_num);
+
+        /* send the client num to the connected client */
+        int num_bytes_sent = send_msg(client_socket, (void*)&client_num, sizeof(client_num));
+
+        printf("Server sent %d bytes to client %d\n", num_bytes_sent, client_num);
+
+        /* receive an acknowledgement from the client */
+        int received = 0;
+        recv_msg(client_socket, (void*)&received, sizeof(int));
+
+        if(received)
+        {
+            printf("Client %d has received its client number from the server\n", client_num);
+            printf("received: %d\n", received);
+        }
+
+        if(!received)
+        {
+            printf("Server failed to receive an acknowledgement from client %d\n", client_num);
+            exit(1);
+        }
+
+        num_connected_clients++;
+    }
+}
+
+
 int rocket_server_init(int addr_size, int num_clients)
 {
     static int init = 0;
@@ -46,49 +115,9 @@ int rocket_server_init(int addr_size, int num_clients)
     {
         init = 1;
 
-        /* initializing shared memory */
         sharedMemory = create_shared_memory(addr_size / PAGE_SIZE);
-        init_shared_memory(sharedMemory);
-        
-        /* setting up server socket */
-        server_socket = create_socket();
-        sockaddr_in_t addr = create_socket_addr(9002, INADDR_ANY);
-        bind_socket(server_socket, &addr);
-        listen_for_connections(server_socket, num_clients);
-
-        int client_num;
-
-        for(client_num = 0; client_num < num_clients; client_num++)
-        {
-            /* connect to a client */
-            sockaddr_in_t client_addr;
-            int addr_length;
-            socket_t client_socket = accept_connection(server_socket, &client_addr, &addr_length);
-
-            if(client_socket == -1)
-            {
-                printf("Server failed to connect to client %d!\n", client_num);
-                return -1;
-            }
-
-            printf("Connected to client %d!\n", client_num);
-
-            num_connected_clients++;
-
-            /* send the client num to the connected client */
-            int num_bytes_sent = send_msg(client_socket, (void*)&client_num, sizeof(int));
-
-            printf("Server sent %d bytes to client %d\n", num_bytes_sent, client_num);
-
-            int received = 0;
-            recv_msg(client_socket, (void*)&received, sizeof(int));
-
-            if(received)
-            {
-                printf("Client %d has received its client number from the server\n", client_num);
-                printf("received: %d\n", received);
-            }
-        }
+        clientInfos  = (ClientInfo*) malloc(sizeof(ClientInfo) * num_clients);
+        setup_client_connections(num_clients);
     }
         
     return 0;

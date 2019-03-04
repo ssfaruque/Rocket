@@ -10,8 +10,9 @@
 
 typedef struct
 {
-    int num_pages;
-    Page* pages;
+    int            num_pages;
+    Page*          pages;
+    PageOwnership* pageOwnerships;
 } SharedMemory;
 
 
