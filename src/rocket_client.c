@@ -75,7 +75,7 @@ void* independent_listener (void* param)
       buf[val] = '\0';
       char* temp_str;
       int page_number = (int)strtol(buf, &temp_str, 10);
-      printf("Page number: %d", page_number);
+      printf("Page number: %d \n", page_number);
       pthread_mutex_lock(&lock[page_number]);
       void* page_addr = get_base_address() + (page_number*PAGE_SIZE);
       mprotect(page_addr, PAGE_SIZE, PROT_READ);
