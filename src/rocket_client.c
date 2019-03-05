@@ -15,6 +15,7 @@
 
 /* The shared memory that each client and server will have */
 SharedMemory* sharedMemory = NULL;
+int total_page_numbers = -1;
 
 int master_socket = -1; // used to read from server
 int slave_socket  = -1; // used to send to server
@@ -63,14 +64,18 @@ int is_out_of_bounds(char* address)
 void* independent_listener (void* param) 
 {
   int acc_sock = *((int *)param);
+  printf("Listening to accepted socket: %d\n", acc_sock);
   char buf[BASE_BUFFER_SIZE];
 
   for(; ;)
     {
       int val = recv_msg(acc_sock, buf, BASE_BUFFER_SIZE);
+      printf("Client receiving msg of size %d\n", val);
+
       buf[val] = '\0';
       char* temp_str;
       int page_number = (int)strtol(buf, &temp_str, 10);
+      printf("Page number: %d", page_number);
       pthread_mutex_lock(&lock[page_number]);
       void* page_addr = get_base_address() + (page_number*PAGE_SIZE);
       mprotect(page_addr, PAGE_SIZE, PROT_READ);
@@ -81,7 +86,6 @@ void* independent_listener (void* param)
 	}
       mprotect(page_addr, PAGE_SIZE, PROT_NONE);
       pthread_mutex_unlock(&lock[page_number]);
-
     }
 }
 
@@ -199,13 +203,15 @@ void setup_accepting_server_connection()
 
     printf("Server connection accepted. \n");
 
-    // // TODO: 
-    // //To call indpendent listener function at the end, it will go something like this:
-    // pthread_t thread;
-    // int indp_lisn = pthread_create(&thread, NULL, independent_listener, (void*) network_socket);
-    // if (indp_lisn != 0) {
-    //     printf("Client failed to create independent thread.");
-    // } 
+    setup_listener_locks();
+    
+    pthread_t thread;
+    int indp_lisn = pthread_create(&thread, NULL, independent_listener, (void*) &network_socket);
+    if (indp_lisn != 0) {
+        printf("Client failed to create independent thread.");
+    } 
+    printf("Listener thread created.\n");
+
 }
 
 int rocket_client_init(int addr_size, int number_of_clients)
@@ -213,7 +219,8 @@ int rocket_client_init(int addr_size, int number_of_clients)
     address_size = addr_size;
     num_clients = number_of_clients;
 
-    sharedMemory = create_shared_memory(addr_size / PAGE_SIZE, number_of_clients);
+    total_page_numbers = addr_size / PAGE_SIZE;
+    sharedMemory = create_shared_memory(total_page_numbers, number_of_clients);
 
     setup_signal_handler();
 

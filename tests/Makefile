@@ -11,7 +11,7 @@ all: buildlib $(TARGETS)
 
 client: client.c 
 	@echo "Building client program..."
-	$(CC) $(CFLAGS) $^ $(LIBPATHS) $(LIBS) $(INCLUDEPATHS) -o $@
+	$(CC) $(CFLAGS) $^ $(LIBPATHS) $(LIBS) $(INCLUDEPATHS) -pthread -o $@
 
 server: server.c 
 	@echo "Building server program..."
