@@ -15,6 +15,7 @@
 
 /* The shared memory that each client and server will have */
 SharedMemory* sharedMemory = NULL;
+int total_page_numbers = -1;
 
 int master_socket = -1; // used to read from server
 int slave_socket  = -1; // used to send to server
@@ -63,14 +64,18 @@ int is_out_of_bounds(char* address)
 void* independent_listener (void* param) 
 {
   int acc_sock = *((int *)param);
+  printf("Listening to accepted socket: %d\n", acc_sock);
   char buf[BASE_BUFFER_SIZE];
 
   for(; ;)
     {
       int val = recv_msg(acc_sock, buf, BASE_BUFFER_SIZE);
+      printf("Client receiving msg of size %d\n", val);
+
       buf[val] = '\0';
       char* temp_str;
       int page_number = (int)strtol(buf, &temp_str, 10);
+      printf("Page number: %d \n", page_number);
       pthread_mutex_lock(&lock[page_number]);
       void* page_addr = get_base_address() + (page_number*PAGE_SIZE);
       mprotect(page_addr, PAGE_SIZE, PROT_READ);
@@ -81,7 +86,6 @@ void* independent_listener (void* param)
 	}
       mprotect(page_addr, PAGE_SIZE, PROT_NONE);
       pthread_mutex_unlock(&lock[page_number]);
-
     }
 }
 
@@ -179,34 +183,11 @@ void send_acknowledgement_to_server()
     }
 }
 
-
-int rocket_client_init(int addr_size, int number_of_clients)
+void setup_accepting_server_connection()
 {
-    address_size = addr_size;
-    num_clients = number_of_clients;
-
-    sharedMemory = create_shared_memory(addr_size / PAGE_SIZE, number_of_clients);
-
-    setup_signal_handler();
-
-    // TODO: Assigning default pages to master and slave nodes to start with (need to demarcate them somehow), socket code goes here for all communication, thread running function that responds to page requests on both master and slave nodes runs here too.
-
-    init_client_socket(num_clients, 9002, INADDR_ANY);
-
-    get_client_number_from_server();
-
-    printf("Client received client number: %d\n", client_num);
-
-    send_acknowledgement_to_server();
-
-    printf("Client %d sent its acknowledgement to the server!\n", client_num);
-
-/*
-
-    // listening for server request
     slave_socket = create_socket();
-    const char* SLAVE_IP = INADDR_ANY; // TODO: change slave IP address
-    sockaddr_in_t slave_addr = create_socket_addr(9002, SLAVE_IP);
+    const char* CLIENT_IP = INADDR_ANY; // TODO: change slave IP address
+    sockaddr_in_t slave_addr = create_socket_addr(9002, CLIENT_IP);
     bind_socket(slave_socket, &slave_addr);
     listen_for_connections(slave_socket, 1);
     
@@ -219,13 +200,45 @@ int rocket_client_init(int addr_size, int number_of_clients)
         printf("Client failed to accept connection.");
         exit(1);
     }
-*/
-    
-    // TODO: 
-    //To call indpendent listener function at the end, it will go something like this:
-    //pthread_t thread
-    // indp_lisn = pthread_create(&thread, NULL, independent_listener, (void*) fd returned from accept syscall);
 
+    printf("Server connection accepted. \n");
+
+    setup_listener_locks();
+    
+    pthread_t thread;
+    int indp_lisn = pthread_create(&thread, NULL, independent_listener, (void*) &network_socket);
+    if (indp_lisn != 0) {
+        printf("Client failed to create independent thread.");
+    } 
+    printf("Listener thread created.\n");
+
+}
+
+int rocket_client_init(int addr_size, int number_of_clients)
+{
+    address_size = addr_size;
+    num_clients = number_of_clients;
+
+    total_page_numbers = addr_size / PAGE_SIZE;
+    sharedMemory = create_shared_memory(total_page_numbers, number_of_clients);
+
+    setup_signal_handler();
+
+    // TODO: Assigning default pages to master and slave nodes to start with (need to demarcate them somehow), socket code goes here for all communication, thread running function that responds to page requests on both master and slave nodes runs here too.
+    const char* SERVER_IP = INADDR_ANY; // TODO: change to actual client ip
+    init_client_socket(num_clients, 9002, SERVER_IP);
+
+    get_client_number_from_server();
+
+    printf("Client received client number: %d\n", client_num);
+
+    send_acknowledgement_to_server();
+
+    printf("Client %d sent its acknowledgement to the server!\n", client_num);
+
+    // listening for server request
+    setup_accepting_server_connection();
+ 
     return 0;
 }
 

@@ -16,7 +16,6 @@ socket_t server_socket    = -1;
 ClientInfo* clientInfos    = NULL;
 SharedMemory* sharedMemory = NULL;
 
-
 void add_reader_to_page(SharedMemory* mem, ClientInfo* clientInfo, int page_num)
 {
 }
@@ -60,11 +59,12 @@ void init_server_socket(int num_clients, int port, const char* IPV4_ADDR)
 }
 
 
-void setup_client_connections(int num_clients)
+void setup_accepting_client_connections(int num_clients)
 {
     clientInfos  = (ClientInfo*) malloc(sizeof(ClientInfo) * num_clients);
-
-    init_server_socket(num_clients, 9002, INADDR_ANY);
+ 
+    const char* SERVER_IP = INADDR_ANY; // TODO: change to actula server ip
+    init_server_socket(num_clients, 9002, SERVER_IP);
 
     int client_num;
 
@@ -112,6 +112,30 @@ void setup_client_connections(int num_clients)
     }
 }
 
+void setup_connecting_clients()
+{
+    // Currently connecting to only one client.
+    // TODO: Connect to all clients (suppoed to get all the client ips from clientInfos)
+    const char* CLIENT_IP = INADDR_ANY; // TODO: change to actual slave IP
+   
+    int client_socket = create_socket();
+
+    if(client_socket == -1)
+    {
+        printf("Failed to create server socket!\n");
+        exit(1);
+    }
+
+    sockaddr_in_t addr = create_socket_addr(9002, CLIENT_IP);
+
+    /* Attempting to establish a connection on the socket */
+    if(connect_socket(client_socket, &addr) == -1)
+    {
+        printf("Server could not connect to client with IP: %s!\n", CLIENT_IP);
+        exit(1);
+    }
+    printf("Connected to client with IP: %s.\n", CLIENT_IP);
+}
 
 int rocket_server_init(int addr_size, int num_clients)
 {
@@ -122,7 +146,9 @@ int rocket_server_init(int addr_size, int num_clients)
         init = 1;
 
         sharedMemory = create_shared_memory(addr_size / PAGE_SIZE, num_clients);
-        setup_client_connections(num_clients);
+        setup_accepting_client_connections(num_clients);
+
+        setup_connecting_clients();
     }
         
     return 0;
