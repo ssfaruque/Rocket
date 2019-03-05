@@ -175,13 +175,36 @@ void get_client_number_from_server()
 void send_acknowledgement_to_server()
 {
     int ack = 1;
+    int num_bytes_sent = send_msg(master_socket, (char*) &ack, sizeof(ack));
 
-    if(send_msg(master_socket, (char*) &ack, sizeof(ack)) == -1)
+    if(num_bytes_sent == -1)
     {
         printf("Client %d failed to send its acknowledgement to the client!\n", client_num);
         exit(1);
     }
 }
+
+
+void get_finished_status_from_server()
+{
+    int server_finished_connecting = 0;
+    int num_bytes_received = recv_msg(master_socket, &server_finished_connecting, sizeof(server_finished_connecting));
+
+    if(num_bytes_received <= 0)
+    {
+        printf("Client failed to receive its client number from the server!\n");
+        exit(1);
+    }
+
+    if(!server_finished_connecting)
+    {
+        printf("Server did not finish connecting to all of the clients\n");
+        exit(1);
+    }
+
+    printf("The server has finished connecting to all %d clients\n", num_clients);
+}
+
 
 void setup_listener_locks(){
     pthread_mutex_t mutexes[total_page_numbers];
@@ -244,6 +267,8 @@ int rocket_client_init(int addr_size, int number_of_clients)
     send_acknowledgement_to_server();
 
     printf("Client %d sent its acknowledgement to the server!\n", client_num);
+
+    get_finished_status_from_server();
 
     // listening for server request
     setup_accepting_server_connection();

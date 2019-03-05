@@ -59,7 +59,24 @@ void init_server_socket(int num_clients, int port, const char* IPV4_ADDR)
 }
 
 
-void setup_accepting_client_connections(int num_clients)
+void print_client_info(ClientInfo* clientInfo)
+{
+    sockaddr_in_t client_addr = clientInfo->client_addr;
+    unsigned short int sin_family = client_addr.sin_family;
+    uint16_t port = client_addr.sin_port;
+    uint32_t s_addr = client_addr.sin_addr.s_addr;
+
+    printf("client ip addr: %s\n", clientInfo->client_ip_addr);
+    printf("client num: %d\n", clientInfo->client_num);
+    printf("socket: %d\n", clientInfo->client_socket);
+    
+    printf("sin_family: %d\n", sin_family);
+    printf("port: %d\n", port);
+    printf("s_addr: %d\n\n", s_addr);
+}
+
+
+void setup_client_connections(int num_clients)
 {
     clientInfos  = (ClientInfo*) malloc(sizeof(ClientInfo) * num_clients);
  
@@ -84,6 +101,8 @@ void setup_accepting_client_connections(int num_clients)
         clientInfos[client_num].client_num    = client_num;
         clientInfos[client_num].client_socket = client_socket;
         clientInfos[client_num].client_addr   = client_addr;
+
+        print_client_info(&clientInfos[client_num]);
 
         printf("Connected to client %d!\n", client_num);
 
@@ -110,7 +129,33 @@ void setup_accepting_client_connections(int num_clients)
 
         num_connected_clients++;
     }
+
+    int connect_to_all_clients_success = (num_connected_clients == num_clients) ? 1 : 0;
+
+    if(connect_to_all_clients_success)
+    {
+        for (client_num = 0; client_num < num_clients; client_num++)
+        {
+            int num_bytes_sent = send_msg(clientInfos[client_num].client_socket, (void*)&connect_to_all_clients_success, sizeof(connect_to_all_clients_success));
+
+            if(num_bytes_sent <= 0 )
+            {
+                printf("Server failed to send client number %d to the respective client\n", client_num);
+                exit(1);
+            }
+        }
+
+        printf("Server successfully connected to all %d clients!\n", num_clients);
+        sleep(5);
+    }
+
+    else
+    {
+        printf("Failed to connect to all %d clients!\n", num_clients);
+        exit(1);
+    }
 }
+
 
 void setup_connecting_clients()
 {
@@ -137,6 +182,7 @@ void setup_connecting_clients()
     printf("Connected to client with IP: %s.\n", CLIENT_IP);
 }
 
+
 int rocket_server_init(int addr_size, int num_clients)
 {
     static int init = 0;
@@ -146,9 +192,9 @@ int rocket_server_init(int addr_size, int num_clients)
         init = 1;
 
         sharedMemory = create_shared_memory(addr_size / PAGE_SIZE, num_clients);
-        setup_accepting_client_connections(num_clients);
+        setup_client_connections(num_clients);
 
-        setup_connecting_clients();
+        //setup_connecting_clients();
     }
         
     return 0;
