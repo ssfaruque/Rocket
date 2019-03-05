@@ -203,6 +203,7 @@ void get_finished_status_from_server()
     }
 
     printf("The server has finished connecting to all %d clients\n", num_clients);
+    sleep(5);
 }
 
 

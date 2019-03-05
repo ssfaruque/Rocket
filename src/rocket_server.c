@@ -125,7 +125,7 @@ void setup_client_connections(int num_clients)
             exit(1);
         }
 
-        printf("<client %d> - acknowledged: %d\n", client_num, received);
+        printf("<client %d> - acknowledged: %d\n\n", client_num, received);
 
         num_connected_clients++;
     }
