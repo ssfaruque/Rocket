@@ -183,6 +183,15 @@ void send_acknowledgement_to_server()
     }
 }
 
+void setup_listener_locks(){
+    pthread_mutex_t mutexes[total_page_numbers];
+    for (int i = 0; i < total_page_numbers; i++) {
+        pthread_mutex_init(&mutexes[i], NULL);
+    }
+
+    lock = mutexes;
+}
+
 void setup_accepting_server_connection()
 {
     slave_socket = create_socket();
