@@ -3,6 +3,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#include <string.h>
 
 #include "com.h"
 #include "page.h"
@@ -67,4 +68,18 @@ int send_msg(socket_t sock, void* buffer, int num_bytes)
 int close_socket(socket_t sock)
 {
     return close(sock);
+}
+
+
+
+int get_ip_addr(socket_t sock, char* buffer)
+{
+    sockaddr_in_t addr;
+    socklen_t     addr_size = sizeof(sockaddr_in_t);
+
+    int result = getpeername(sock, (struct sockaddr*)&addr, &addr_size);
+
+    strcpy(buffer, inet_ntoa(addr.sin_addr));
+
+    return result;
 }

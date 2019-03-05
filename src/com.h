@@ -113,4 +113,18 @@ int send_msg(socket_t sock, void* buffer, int num_bytes);
  */
 int close_socket(socket_t sock);
 
+
+
+
+/*
+ * get_ip_addr
+ * @sock: The socket to retrieve the ip address from
+ * @buffer: The IP address will be stored in this parameter
+ *
+ * Retrieves the ip address from the specified socket and stores it in a buffer
+ * 
+ * Return: 0 for success or -1 for error
+ */
+int get_ip_addr(socket_t sock, char* buffer);
+
 #endif  // COM_H
