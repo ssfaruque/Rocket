@@ -239,9 +239,6 @@ void get_finished_status_from_server()
         printf("Server did not finish connecting to all of the clients\n");
         exit(1);
     }
-
-    printf("The server has finished connecting to all %d clients\n", num_clients);
-    sleep(5);
 }
 
 
@@ -271,7 +268,7 @@ void init_pages(int addr_size)
     pages         = (Page*) malloc(sizeof(Page) * num_pages);
 
     mprotect(get_base_address(), addr_size, PROT_NONE);
-    mprotect(get_respective_client_base_address(), addr_size / num_clients, PROT_WRITE);
+    mprotect(get_respective_client_base_address(),  addr_size / num_clients, PROT_WRITE | PROT_READ);
     memset(get_respective_client_base_address(), 0, addr_size / num_clients);
 }
 
@@ -279,11 +276,11 @@ void init_pages(int addr_size)
 
 int rocket_client_init(int addr_size, int number_of_clients)
 {
-    address_size = addr_size;
-    num_clients = number_of_clients;
-
+    address_size       = addr_size;
+    num_clients        = number_of_clients;
     total_page_numbers = addr_size / PAGE_SIZE;
-    sharedMemory = create_shared_memory(total_page_numbers, number_of_clients);
+
+    //sharedMemory = create_shared_memory(total_page_numbers, number_of_clients);
 
     setup_signal_handler();
 
@@ -292,19 +289,20 @@ int rocket_client_init(int addr_size, int number_of_clients)
     init_client_socket(num_clients, 9002, SERVER_IP);
 
     get_client_number_from_server();
-
     printf("Client received client number: %d\n", client_num);
 
     send_acknowledgement_to_server();
-
     printf("Client %d sent its acknowledgement to the server!\n", client_num);
 
     get_finished_status_from_server();
+    printf("The server has finished connecting to all %d clients\n", num_clients);
 
     init_pages(addr_size);
 
+    sleep(5);
+
     // listening for server request
-    setup_indpendent_listener();
+    //setup_indpendent_listener();
  
     return 0;
 }
