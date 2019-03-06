@@ -209,35 +209,15 @@ void get_finished_status_from_server()
 }
 
 
-void setup_listener_locks(){
-    pthread_mutex_t mutexes[total_page_numbers];
-    for (int i = 0; i < total_page_numbers; i++) {
-        pthread_mutex_init(&mutexes[i], NULL);
-    }
-
-    lock = mutexes;
+void setup_listener_locks()
+{
+    lock = (pthread_mutex_t*) malloc(sizeof(pthread_mutex_t) * address_size / PAGE_SIZE);
+    for (int i = 0; i < total_page_numbers; i++) 
+        pthread_mutex_init(&lock[i], NULL);
 }
 
 void setup_accepting_server_connection()
 {
-    slave_socket = create_socket();
-    const char* CLIENT_IP = INADDR_ANY; // TODO: change slave IP address
-    sockaddr_in_t slave_addr = create_socket_addr(9002, CLIENT_IP);
-    bind_socket(slave_socket, &slave_addr);
-    listen_for_connections(slave_socket, 1);
-    
-    sockaddr_in_t addr;
-    int addr_length;
-    socket_t network_socket = accept_connection(slave_socket, &addr, &addr_length);
-
-    if(network_socket == -1)
-    {
-        printf("Client failed to accept connection.");
-        exit(1);
-    }
-
-    printf("Server connection accepted. \n");
-
     setup_listener_locks();
     
     pthread_t thread;
