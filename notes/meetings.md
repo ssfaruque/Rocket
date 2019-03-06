@@ -1,6 +1,19 @@
 # Trello board
 https://trello.com/b/DGMnzneN/rocket-project
 
+# meeting4
+# What we have done.
+1. TCP connection between server and clients.
+2. DSM logic for writing to pages.
+3. DSM logic for page fault handling.
+
+# What we're going to do this week 
+1. DSM logic for reading from pages.
+2. Add test cases
+ * data consistency across clients
+ * page fault handling
+ * DSM logic for reading/writing.
+
 # meeting3
 # What we have done.
  1. Communication b/w server and client.
