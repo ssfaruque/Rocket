@@ -9,12 +9,16 @@
 #include "page.h"
 #include "com.h"
 
+#define BASE_BUFFER_SIZE 1024
 
 int num_connected_clients = 0;
-socket_t server_socket    = -1;
+socket_t master_socket    = -1;
+
+int address_size = -1;
 
 ClientInfo* clientInfos    = NULL;
 SharedMemory* sharedMemory = NULL;
+PageOwnership* pageOwnerships = NULL;
 
 void add_reader_to_page(SharedMemory* mem, ClientInfo* clientInfo, int page_num)
 {
@@ -32,12 +36,66 @@ void invalidate_readers_on_page(SharedMemory* mem, int page_num)
      
 }
 
+void* independent_listener_server(void* param)
+{
+  int acc_sock = *((int *)param);                                                                                                                                                                           
+  printf("Listening to accepted socket: %d\n", acc_sock);                                                                                                                                                   
+  char buf[BASE_BUFFER_SIZE];
+
+  while (1) {
+    //RECEIVING PAGE FROM CLIENT 1
+      int val = recv_msg(master_socket, buf, BASE_BUFFER_SIZE);
+      printf("Server receiving msg of size %d\n", val);
+
+      buf[val] = '\0';
+      char* temp_str;
+      int page_number = (int)strtol(buf, &temp_str, 10);
+      printf("Page number: %d \n", page_number);
+
+      int target_client_sock = pageOwnerships[page_number].clientExclusiveWriter->client_socket;
+
+      char buf[BASE_BUFFER_SIZE];
+      snprintf(buf, BASE_BUFFER_SIZE, "%d", page_number);
+
+      //SENDING PAGE REQUEST TO CLIENT 2
+      if(send_msg(target_client_sock, buf, strlen(buf)) != 0)
+	{
+	  printf("Could not send message for page request!\n");
+	  exit(1);
+	}
+      
+      char data[PAGE_SIZE];
+
+      //RECEIVING PAGE FROM CLIENT 2
+      for(int total = PAGE_SIZE, index = 0; total != 0; )
+	{
+	  int val = recv_msg(target_client_sock, &data[index], total);
+	  total = total - val;
+	  index = index + val;
+	}
+
+      //UPDATE PAGE OWNERSHIPS!!! WE ARE ONLY CHANGING SOCKET. NOTHING ELSE.
+
+      pageOwnerships[page_number].clientExclusiveWriter->client_socket = acc_sock;
+
+      //SENDING PAGE FROM MASTER TO CLIENT 1
+
+      void* page_addr = get_base_address() + (page_number*PAGE_SIZE);
+      if(send_msg(acc_sock, page_addr, PAGE_SIZE) != 0)
+        {
+          printf("Could not send page requested!\n");
+          exit(1);
+        }
+      
+  }
+  return NULL;
+}
 
 void init_server_socket(int num_clients, int port, const char* IPV4_ADDR)
 {
-    server_socket = create_socket();
+    master_socket = create_socket();
 
-    if(server_socket == -1)
+    if(master_socket == -1)
     {
         printf("Failed to create server socket!\n");
         exit(1);
@@ -45,13 +103,13 @@ void init_server_socket(int num_clients, int port, const char* IPV4_ADDR)
 
     sockaddr_in_t addr = create_socket_addr(port, IPV4_ADDR);
 
-    if(bind_socket(server_socket, &addr) == -1)
+    if(bind_socket(master_socket, &addr) == -1)
     {
         printf("Failed to bind server socket!\n");
         exit(1);
     }
 
-    if(listen_for_connections(server_socket, num_clients) == -1)
+    if(listen_for_connections(master_socket, num_clients) == -1)
     {
         printf("Failed to setup listening for connections!\n");
         exit(1);
@@ -90,7 +148,7 @@ void setup_client_connections(int num_clients)
         /* connect to a client */
         sockaddr_in_t client_addr;
         int addr_length;
-        socket_t client_socket = accept_connection(server_socket, &client_addr, &addr_length);
+        socket_t client_socket = accept_connection(master_socket, &client_addr, &addr_length);
 
         if (client_socket == -1)
         {
@@ -128,7 +186,21 @@ void setup_client_connections(int num_clients)
         printf("<client %d> - acknowledged: %d\n\n", client_num, received);
 
         num_connected_clients++;
+
     }
+
+
+    int page_num;
+    int num_pages_each_clients = (address_size / PAGE_SIZE) / num_clients;
+
+    for(page_num = 0; page_num < address_size / PAGE_SIZE; page_num++)
+    {
+        int client_index = page_num / num_pages_each_clients;
+        pageOwnerships[page_num].clientExclusiveWriter = &clientInfos[client_index];
+    }
+
+
+
 
     int connect_to_all_clients_success = (num_connected_clients == num_clients) ? 1 : 0;
 
@@ -187,11 +259,14 @@ int rocket_server_init(int addr_size, int num_clients)
 {
     static int init = 0;
 
+    address_size = addr_size;
     if(!init)
     {
         init = 1;
 
         sharedMemory = create_shared_memory(addr_size / PAGE_SIZE, num_clients);
+        pageOwnerships = create_pageownerships(addr_size / PAGE_SIZE, num_clients);
+
         setup_client_connections(num_clients);
 
         //setup_connecting_clients();

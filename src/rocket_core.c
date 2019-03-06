@@ -47,6 +47,24 @@ SharedMemory* create_shared_memory(int number_of_pages, int number_of_clients)
 }
 
 
+
+PageOwnership* create_pageownerships(int number_of_pages, int number_of_clients)
+{
+    PageOwnership* pageOwnership = (PageOwnership*) malloc(sizeof(PageOwnership));
+
+    int i;
+
+    for(i = 0; i < number_of_pages; i++)
+    {
+        pageOwnership->clientReaders = NULL;
+        pageOwnership->clientExclusiveWriter = NULL;
+    }
+
+    return pageOwnership;
+}
+
+
+
 Page* retrieve_page(SharedMemory* mem, void* addr)
 {
     int num_bytes_from_base = (int)(((char*) addr) - ((char*) get_base_address()));

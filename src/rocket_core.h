@@ -23,6 +23,8 @@ SharedMemory* create_shared_memory(int number_of_pages, int number_of_clients);
 
 void init_shared_memory(SharedMemory* mem);
 
+PageOwnership* create_pageownerships(int number_of_pages, int number_of_clients);
+
 Page* retrieve_page(SharedMemory* mem, void* addr);
 
 

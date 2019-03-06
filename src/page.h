@@ -22,11 +22,14 @@ typedef struct
     ClientInfo* readers;
 } ClientReaders;
 
-
+/*
 typedef struct
 {
     ClientInfo* exclusiveWriter;
 } ClientExclusiveWriter;
+*/
+
+typedef ClientInfo ClientExclusiveWriter;
 
 
 typedef struct 

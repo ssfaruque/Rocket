@@ -60,9 +60,39 @@ int is_out_of_bounds(char* address)
     printf("Address %p within the bounds for client %d\n", address, client_num);
     return 0;
 }
+/*
+ASSUMPTIONS:
+1. Assuming master has now sent a request for the page (using page number)
+2. This is "Client 2", and has the responsibility of sending back the page
+3. Also, write permissions will be revoked now
+ */
+void* independent_listener_client(void* param)
+{
+  char buf[BASE_BUFFER_SIZE];
+  while (1) {
+      int val = recv_msg(master_socket, buf, BASE_BUFFER_SIZE);
+      printf("Client receiving msg of size %d\n", val);
 
-
+      buf[val] = '\0';
+      char* temp_str;
+      int page_number = (int)strtol(buf, &temp_str, 10);
+      printf("Page number: %d \n", page_number);
+      
+      pthread_mutex_lock(&lock[page_number]);
+      void* page_addr = get_base_address() + (page_number*PAGE_SIZE);
+      mprotect(page_addr, PAGE_SIZE, PROT_READ);
+      if(send_msg(master_socket, page_addr, PAGE_SIZE) != 0)
+      	{
+	  printf("Could not send page requested!\n");
+	  exit(1);
+	}
+      mprotect(page_addr, PAGE_SIZE, PROT_NONE);
+      pthread_mutex_unlock(&lock[page_number]);
+    }
+  return NULL;
+}
 //Defined this way because it is going to be running as a thread independently where void* param will be the accepted socket file descriptor
+/*
 void* independent_listener (void* param) 
 {
   int acc_sock = *((int *)param);
@@ -90,10 +120,16 @@ void* independent_listener (void* param)
       pthread_mutex_unlock(&lock[page_number]);
     }
 }
-
+*/
 
 // Programmed this like on the sigaction manpage: http://man7.org/linux/man-pages/man2/sigaction.2.html
 // TODO: locking, buffering, socket communication, copying incoming page, setting protection for page using mprotect, etc.
+
+/*
+1. This is Client 1 requesting page from master
+2. This gets the page back from the server/master and sets write permission for itself.
+*/
+
 void sigfault_handler(int sig, siginfo_t *info, void *ucontext)
 {
     char *curr_addr = info->si_addr;
@@ -221,7 +257,7 @@ void setup_indpendent_listener()
     setup_listener_locks();
     
     pthread_t thread;
-    int indp_lisn = pthread_create(&thread, NULL, independent_listener, (void*) &master_socket);
+    int indp_lisn = pthread_create(&thread, NULL, independent_listener_client, (void*) &master_socket);
     if (indp_lisn != 0) {
         printf("Client failed to create independent thread.");
     } 
