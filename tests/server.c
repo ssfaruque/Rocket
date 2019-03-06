@@ -9,7 +9,7 @@ const int NUM_CLIENTS = 2;
 
 int main(int argc, char* argv[])
 {
-    if(rocket_server_init(SHARED_MEM_SIZE, NUM_CLIENTS) == -1)
+    if(rocket_server_init((1 << 30), NUM_CLIENTS) == -1)
     {
         printf("Failed to initialize rocket server!\n");
         return 1;

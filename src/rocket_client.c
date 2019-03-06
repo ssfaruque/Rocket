@@ -17,6 +17,8 @@
 SharedMemory* sharedMemory = NULL;
 int total_page_numbers = -1;
 
+Page* pages;
+
 int master_socket = -1; // used to read from server
 int slave_socket  = -1; // used to send to server
 int num_clients   = -1; // total number of clients in the application
@@ -34,7 +36,7 @@ struct sigaction sa;   // used for signal handling
 */
 void* get_respective_client_base_address()
 {
-    int address_offset = (client_num * address_size);
+    int address_offset = (client_num * (address_size / num_clients));
     return ((char*)get_base_address()) + address_offset;
 }
 
@@ -244,8 +246,20 @@ void setup_accepting_server_connection()
         printf("Client failed to create independent thread.");
     } 
     printf("Listener thread created.\n");
-
 }
+
+
+void init_pages(int addr_size)
+{
+    int num_pages = addr_size / PAGE_SIZE;
+    pages         = (Page*) malloc(sizeof(Page) * num_pages);
+
+    mprotect(get_base_address(), addr_size, PROT_NONE);
+    mprotect(get_respective_client_base_address(), addr_size / num_clients, PROT_WRITE);
+    memset(get_respective_client_base_address(), 0, addr_size / num_clients);
+}
+
+
 
 int rocket_client_init(int addr_size, int number_of_clients)
 {
@@ -270,6 +284,8 @@ int rocket_client_init(int addr_size, int number_of_clients)
     printf("Client %d sent its acknowledgement to the server!\n", client_num);
 
     get_finished_status_from_server();
+
+    init_pages(addr_size);
 
     // listening for server request
     setup_accepting_server_connection();
