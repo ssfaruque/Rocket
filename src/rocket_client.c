@@ -216,12 +216,12 @@ void setup_listener_locks()
         pthread_mutex_init(&lock[i], NULL);
 }
 
-void setup_accepting_server_connection()
+void setup_indpendent_listener()
 {
     setup_listener_locks();
     
     pthread_t thread;
-    int indp_lisn = pthread_create(&thread, NULL, independent_listener, (void*) &network_socket);
+    int indp_lisn = pthread_create(&thread, NULL, independent_listener, (void*) &master_socket);
     if (indp_lisn != 0) {
         printf("Client failed to create independent thread.");
     } 
@@ -268,7 +268,7 @@ int rocket_client_init(int addr_size, int number_of_clients)
     init_pages(addr_size);
 
     // listening for server request
-    setup_accepting_server_connection();
+    setup_indpendent_listener();
  
     return 0;
 }
