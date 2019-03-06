@@ -10,9 +10,9 @@ https://trello.com/b/DGMnzneN/rocket-project
 # What we're going to do this week 
 1. DSM logic for reading from pages.
 2. Add test cases
- * data consistency across clients
- * page fault handling
- * DSM logic for reading/writing.
+   * data consistency across clients
+   * page fault handling
+   * DSM logic for reading/writing.
 
 # meeting3
 # What we have done.
