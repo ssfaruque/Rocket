@@ -12,7 +12,7 @@ void* get_base_address()
     return (void*)(1<<30);
 }
 
-
+/*
 void init_shared_memory(SharedMemory* mem)
 {
     memset(mem->pages, 0, sizeof(Page) * mem->num_pages);
@@ -46,11 +46,17 @@ SharedMemory* create_shared_memory(int number_of_pages, int number_of_clients)
     return mem;
 }
 
-
+Page* retrieve_page(SharedMemory* mem, void* addr)
+{
+    int num_bytes_from_base = (int)(((char*) addr) - ((char*) get_base_address()));
+    int page_num = num_bytes_from_base / PAGE_SIZE;
+    return &mem->pages[page_num];
+}
+*/
 
 PageOwnership* create_pageownerships(int number_of_pages, int number_of_clients)
 {
-    PageOwnership* pageOwnership = (PageOwnership*) malloc(sizeof(PageOwnership));
+    PageOwnership* pageOwnership = (PageOwnership*) malloc(sizeof(PageOwnership) * number_of_pages);
 
     int i;
 
@@ -65,9 +71,3 @@ PageOwnership* create_pageownerships(int number_of_pages, int number_of_clients)
 
 
 
-Page* retrieve_page(SharedMemory* mem, void* addr)
-{
-    int num_bytes_from_base = (int)(((char*) addr) - ((char*) get_base_address()));
-    int page_num = num_bytes_from_base / PAGE_SIZE;
-    return &mem->pages[page_num];
-}

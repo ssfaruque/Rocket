@@ -13,8 +13,6 @@
 
 #define BASE_BUFFER_SIZE 1024
 
-/* The shared memory that each client and server will have */
-SharedMemory* sharedMemory = NULL;
 int total_page_numbers = -1;
 
 Page* pages;
@@ -230,7 +228,7 @@ void get_finished_status_from_server()
 
     if(num_bytes_received <= 0)
     {
-        printf("Client failed to receive its client number from the server!\n");
+        printf("Client did not receive message from server!\n");
         exit(1);
     }
 
@@ -264,12 +262,18 @@ void setup_indpendent_listener()
 
 void init_pages(int addr_size)
 {
-    int num_pages = addr_size / PAGE_SIZE;
-    pages         = (Page*) malloc(sizeof(Page) * num_pages);
+    //int num_pages = addr_size / PAGE_SIZE;
+    pages         = mmap(get_base_address(), addr_size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 
     mprotect(get_base_address(), addr_size, PROT_NONE);
-    mprotect(get_respective_client_base_address(),  addr_size / num_clients, PROT_WRITE | PROT_READ);
+    mprotect(get_respective_client_base_address(),  addr_size / num_clients, PROT_WRITE);
     memset(get_respective_client_base_address(), 0, addr_size / num_clients);
+
+    /* FOR TESTING
+    char* ptr = (char*)get_base_address();
+    *ptr = 5;
+    printf("Address %p: %d\n", ptr, *ptr);
+    */
 }
 
 
@@ -296,6 +300,10 @@ int rocket_client_init(int addr_size, int number_of_clients)
 
     get_finished_status_from_server();
     printf("The server has finished connecting to all %d clients\n", num_clients);
+
+
+    printf("client starting address: %p\n", (char*)get_respective_client_base_address());
+
 
     init_pages(addr_size);
 

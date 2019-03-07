@@ -17,24 +17,9 @@ socket_t master_socket    = -1;
 int address_size = -1;
 
 ClientInfo* clientInfos    = NULL;
-SharedMemory* sharedMemory = NULL;
 PageOwnership* pageOwnerships = NULL;
 
-void add_reader_to_page(SharedMemory* mem, ClientInfo* clientInfo, int page_num)
-{
-}
 
-
-void give_exclusive_write_access(SharedMemory* mem, int client_num)
-{
-
-}
-
-
-void invalidate_readers_on_page(SharedMemory* mem, int page_num)
-{   
-     
-}
 
 void* independent_listener_server(void* param)
 {
@@ -200,8 +185,6 @@ void setup_client_connections(int num_clients)
     }
 
 
-
-
     int connect_to_all_clients_success = (num_connected_clients == num_clients) ? 1 : 0;
 
     if(connect_to_all_clients_success)
@@ -264,7 +247,6 @@ int rocket_server_init(int addr_size, int num_clients)
     {
         init = 1;
 
-        sharedMemory = create_shared_memory(addr_size / PAGE_SIZE, num_clients);
         pageOwnerships = create_pageownerships(addr_size / PAGE_SIZE, num_clients);
 
         setup_client_connections(num_clients);

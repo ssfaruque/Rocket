@@ -8,24 +8,27 @@
 #define ASSERT(cond, str) {assert((cond) && (str));}
 
 
-typedef struct
+
+
+/*typedef struct
 {
     int            num_pages;
     int            num_clients;
     Page*          pages;
     PageOwnership* pageOwnerships;
 } SharedMemory;
-
+*/
 
 void* get_base_address();
 
-SharedMemory* create_shared_memory(int number_of_pages, int number_of_clients); 
+//SharedMemory* create_shared_memory(int number_of_pages, int number_of_clients); 
 
-void init_shared_memory(SharedMemory* mem);
+//void init_shared_memory(SharedMemory* mem);
 
 PageOwnership* create_pageownerships(int number_of_pages, int number_of_clients);
 
-Page* retrieve_page(SharedMemory* mem, void* addr);
+/* might use this later?? */
+//Page* retrieve_page(SharedMemory* mem, void* addr);
 
 
 
