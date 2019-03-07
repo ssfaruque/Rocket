@@ -13,8 +13,9 @@
 
 #define BASE_BUFFER_SIZE 1024
 
-int total_page_numbers = -1;
+int total_num_pages = -1;
 
+/* Shared memory is represented as an array of pages */
 Page* pages;
 
 int master_socket = -1; // used to read from server
@@ -251,7 +252,7 @@ void get_finished_status_from_server()
 void setup_listener_locks()
 {
     lock = (pthread_mutex_t*) malloc(sizeof(pthread_mutex_t) * address_size / PAGE_SIZE);
-    for (int i = 0; i < total_page_numbers; i++) 
+    for (int i = 0; i < total_num_pages; i++) 
         pthread_mutex_init(&lock[i], NULL);
 }
 
@@ -271,8 +272,7 @@ void setup_indpendent_listener()
 
 void init_pages(int addr_size)
 {
-    //int num_pages = addr_size / PAGE_SIZE;
-    pages         = mmap(get_base_address(), addr_size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    pages = mmap(get_base_address(), addr_size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 
     mprotect(get_base_address(), addr_size, PROT_NONE);
     mprotect(get_respective_client_base_address(),  addr_size / num_clients, PROT_WRITE);
@@ -289,14 +289,9 @@ int rocket_client_init(int addr_size, int number_of_clients)
 {
     address_size       = addr_size;
     num_clients        = number_of_clients;
-    total_page_numbers = addr_size / PAGE_SIZE;
+    total_num_pages    = addr_size / PAGE_SIZE;
 
-    //sharedMemory = create_shared_memory(total_page_numbers, number_of_clients);
-
-    setup_signal_handler();
-
-    // TODO: Assigning default pages to master and slave nodes to start with (need to demarcate them somehow), socket code goes here for all communication, thread running function that responds to page requests on both master and slave nodes runs here too.
-    const char* SERVER_IP = INADDR_ANY; // TODO: change to actual client ip
+    const char* SERVER_IP = INADDR_ANY; 
     init_client_socket(num_clients, 9002, SERVER_IP);
 
     get_client_number_from_server();
@@ -312,8 +307,8 @@ int rocket_client_init(int addr_size, int number_of_clients)
 
     sleep(5);
 
-    // listening for server request
-    setup_indpendent_listener();
+    //setup_signal_handler();
+    //setup_indpendent_listener();
 
     init_pages(addr_size);
  
