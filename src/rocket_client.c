@@ -58,6 +58,8 @@ int is_out_of_bounds(char* address)
     printf("Address %p within the bounds for client %d\n", address, client_num);
     return 0;
 }
+
+
 /*
 ASSUMPTIONS:
 1. Assuming master has now sent a request for the page (using page number)
@@ -89,6 +91,8 @@ void* independent_listener_client(void* param)
     }
   return NULL;
 }
+
+
 //Defined this way because it is going to be running as a thread independently where void* param will be the accepted socket file descriptor
 /*
 void* independent_listener (void* param) 
@@ -130,7 +134,10 @@ void* independent_listener (void* param)
 
 void sigfault_handler(int sig, siginfo_t *info, void *ucontext)
 {
+    printf("STARTING SEGFAULT HANDLER!\n");
+
     char *curr_addr = info->si_addr;
+
     void *temp      = get_base_address();
     char *base_addr = (char*) temp;
 
@@ -161,6 +168,7 @@ void sigfault_handler(int sig, siginfo_t *info, void *ucontext)
     memcpy(curr_addr, data, PAGE_SIZE);
     pthread_mutex_unlock(&lock[page_number]);
 
+    printf("FINISHING SEGFAULT HANDLER!\n");
 }
 
 
@@ -170,6 +178,7 @@ void setup_signal_handler()
     sa.sa_sigaction = sigfault_handler;
     sigemptyset(&sa.sa_mask);
     sa.sa_flags = SA_SIGINFO;
+    sigaction(SIGSEGV, &sa, NULL);
 }
 
 
@@ -192,7 +201,6 @@ void init_client_socket(int num_clients, int port, const char* IPV4_ADDR)
         printf("Client could not connect to server with IP: %s!\n", IPV4_ADDR);
         exit(1);
     }
-
 }
 
 
@@ -247,6 +255,7 @@ void setup_listener_locks()
         pthread_mutex_init(&lock[i], NULL);
 }
 
+
 void setup_indpendent_listener()
 {
     setup_listener_locks();
@@ -269,13 +278,11 @@ void init_pages(int addr_size)
     mprotect(get_respective_client_base_address(),  addr_size / num_clients, PROT_WRITE);
     memset(get_respective_client_base_address(), 0, addr_size / num_clients);
 
-    /* FOR TESTING
+    // FOR TESTING
     char* ptr = (char*)get_base_address();
     *ptr = 5;
-    printf("Address %p: %d\n", ptr, *ptr);
-    */
+    printf("Address %p: %d\n", ptr, *((int*)ptr));
 }
-
 
 
 int rocket_client_init(int addr_size, int number_of_clients)
@@ -301,16 +308,14 @@ int rocket_client_init(int addr_size, int number_of_clients)
     get_finished_status_from_server();
     printf("The server has finished connecting to all %d clients\n", num_clients);
 
-
     printf("client starting address: %p\n", (char*)get_respective_client_base_address());
-
-
-    init_pages(addr_size);
 
     sleep(5);
 
     // listening for server request
-    //setup_indpendent_listener();
+    setup_indpendent_listener();
+
+    init_pages(addr_size);
  
     return 0;
 }
