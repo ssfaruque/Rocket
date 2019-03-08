@@ -26,8 +26,8 @@ int address_size  = -1; // total size of the shared memory in bytes
 
 char server_addr[32];  // IPV4 address of the server
 
-pthread_mutex_t *lock; // used for independent listender
-struct sigaction sa;   // used for signal handling
+pthread_mutex_t *lock = NULL; // used for independent listender
+//struct sigaction sa;   // used for signal handling
 
 
 /* retrieves the starting address of the memory region corresponding 
@@ -142,7 +142,10 @@ void sigfault_handler(int sig, siginfo_t *info, void *ucontext)
     void *temp      = get_base_address();
     char *base_addr = (char*) temp;
 
+
     int page_number = ((int)(curr_addr - base_addr)) / PAGE_SIZE;
+
+    printf("segfault handler, page number: %d\n", page_number);
     
     pthread_mutex_lock(&lock[page_number]);
     char buf[BASE_BUFFER_SIZE];
@@ -176,10 +179,13 @@ void sigfault_handler(int sig, siginfo_t *info, void *ucontext)
 // Setting up the signal catching code
 void setup_signal_handler()
 {
+    struct sigaction sa;   // used for signal handling
     sa.sa_sigaction = sigfault_handler;
     sigemptyset(&sa.sa_mask);
     sa.sa_flags = SA_SIGINFO;
-    sigaction(SIGSEGV, &sa, NULL);
+    //sigaction(SIGSEGV, &sa, NULL);
+    if(sigaction(SIGSEGV, &sa, NULL) == 0)
+        printf("Failed to setup sigfault handler\n");
 }
 
 
@@ -251,15 +257,14 @@ void get_finished_status_from_server()
 
 void setup_listener_locks()
 {
-    lock = (pthread_mutex_t*) malloc(sizeof(pthread_mutex_t) * address_size / PAGE_SIZE);
+    lock = (pthread_mutex_t*) malloc(sizeof(pthread_mutex_t) * total_num_pages);
     for (int i = 0; i < total_num_pages; i++) 
         pthread_mutex_init(&lock[i], NULL);
 }
 
 
-void setup_indpendent_listener()
+void setup_independent_listener()
 {
-    setup_listener_locks();
     
     pthread_t thread;
     int indp_lisn = pthread_create(&thread, NULL, independent_listener_client, (void*) &master_socket);
@@ -291,6 +296,10 @@ int rocket_client_init(int addr_size, int number_of_clients)
     num_clients        = number_of_clients;
     total_num_pages    = addr_size / PAGE_SIZE;
 
+    setup_listener_locks();
+
+    setup_signal_handler();
+
     const char* SERVER_IP = INADDR_ANY; 
     init_client_socket(num_clients, 9002, SERVER_IP);
 
@@ -307,8 +316,7 @@ int rocket_client_init(int addr_size, int number_of_clients)
 
     sleep(5);
 
-    //setup_signal_handler();
-    //setup_indpendent_listener();
+    //setup_independent_listener();
 
     init_pages(addr_size);
  

@@ -1,5 +1,5 @@
 CC := gcc
-CFLAGS := -Wall -Werror
+CFLAGS := -Wall -Werror -g
 LIBS := -lrdsm
 LIBPATHS := -L ../lib
 INCLUDEPATHS := -I ../src
