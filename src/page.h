@@ -11,6 +11,7 @@ typedef struct
     char          client_ip_addr[32];
     int           client_num;
     socket_t      client_socket;
+    socket_t      sig_socket;
     sockaddr_in_t client_addr;
 
 } ClientInfo;

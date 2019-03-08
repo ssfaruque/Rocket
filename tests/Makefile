@@ -1,6 +1,6 @@
 CC := gcc
 CFLAGS := -Wall -Werror -g
-LIBS := -lrdsm
+LIBS :=  -lrdsm
 LIBPATHS := -L ../lib
 INCLUDEPATHS := -I ../src
 TARGETS := client server
@@ -11,11 +11,11 @@ all: buildlib $(TARGETS)
 
 client: client.c 
 	@echo "Building client program..."
-	$(CC) $(CFLAGS) $^ $(LIBPATHS) $(LIBS) $(INCLUDEPATHS) -pthread -o $@
+	$(CC) $(CFLAGS) $^ $(LIBPATHS) $(LIBS) -pthread $(INCLUDEPATHS) -o $@
 
 server: server.c 
 	@echo "Building server program..."
-	$(CC) $(CFLAGS) $^ $(LIBPATHS) $(LIBS) $(INCLUDEPATHS) -o $@
+	$(CC) $(CFLAGS) $^ $(LIBPATHS) $(LIBS) -pthread $(INCLUDEPATHS) -o $@
 
 buildlib:
 	make -C ..
