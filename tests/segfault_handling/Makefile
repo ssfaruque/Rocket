@@ -1,8 +1,8 @@
 CC := gcc
 CFLAGS := -Wall -Werror
 LIBS := -lrdsm
-LIBPATHS := -L ../lib
-INCLUDEPATHS := -I ../src
+LIBPATHS := -L ../../lib
+INCLUDEPATHS := -I ../../src
 TARGETS := client server
 
 .PHONY := buildlib all clean
