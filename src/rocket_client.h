@@ -1,7 +1,8 @@
 #ifndef ROCKET_CLIENT_H
 #define ROCKET_CLIENT_H
-
 #include "com.h"
+
+extern int client_num;
 
 struct Page;
 

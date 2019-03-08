@@ -380,7 +380,6 @@ int rocket_server_init(int addr_size, int num_clients)
 
     }
 
-    while(1);
         
     return 0;
 }

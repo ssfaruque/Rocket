@@ -263,12 +263,12 @@ void init_pages(int addr_size)
     mprotect(get_respective_client_base_address(),  addr_size / num_clients, PROT_WRITE);
     memset(get_respective_client_base_address(), 0, addr_size / num_clients);
 
-    // FOR TESTING
-    char* ptr = (char*)get_base_address();
+    // // FOR TESTING
+    // char* ptr = (char*)get_base_address();
 
-    if(client_num == 0)
-        strcpy(ptr, "Client 0 was here!");
-    printf("Address %p: %s\n", ptr, ptr);
+    // if(client_num == 0)
+    //     strcpy(ptr, "Client 0 was here!");
+    // printf("Address %p: %s\n", ptr, ptr);
 }
 
 
@@ -320,8 +320,6 @@ int rocket_client_init(int addr_size, int number_of_clients)
     setup_independent_listener();
 
     init_pages(addr_size);
-
-    while(1);
  
     return 0;
 }

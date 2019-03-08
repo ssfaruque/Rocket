@@ -15,7 +15,7 @@ client: client.c
 
 server: server.c 
 	@echo "Building server program..."
-	$(CC) $(CFLAGS) $^ $(LIBPATHS) $(LIBS) $(INCLUDEPATHS) -o $@
+	$(CC) $(CFLAGS) $^ $(LIBPATHS) $(LIBS) $(INCLUDEPATHS) -pthread -o $@
 
 buildlib:
 	make -C ..
