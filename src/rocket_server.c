@@ -62,8 +62,6 @@ void* independent_listener_server(void* param)
       printf("client2_sock: %d\n", target_client_sock);
     
       printf("client1_sock: %d\n", acc_sock);
-      //char buf[BASE_BUFFER_SIZE];
-      //snprintf(buf, BASE_BUFFER_SIZE, "%d", page_number);
 
       //SENDING PAGE REQUEST TO CLIENT 2
       if(send_msg(target_client_sock, buf, strlen(buf)) <= 0)
@@ -89,21 +87,8 @@ void* independent_listener_server(void* param)
     printf("Updated page ownership\n");
       //SENDING PAGE FROM MASTER TO CLIENT 1
     printf("Attempting to send page from master to client 1\n");
-      //void* page_addr = ((char*)get_base_address()) + (page_number*PAGE_SIZE);
 
-      //int ack_val = 3;
       send_msg(acc_sock, &data, PAGE_SIZE);
-
-
-    //   for(int i = 0; i < 2; i++)
-    //   { 
-    //       if(send_msg(acc_sock, page_addr, PAGE_SIZE) <= 0)
-    //       {
-    //         printf("Could not send page requested with socket %d!\n", acc_sock);
-    //         //exit(1);
-    //       }
-    //   }
-      //printf("Sent page to client1 successfully!!\n");
 
       pthread_mutex_unlock(&server_socket_lock);
   }
@@ -252,14 +237,6 @@ void setup_client_connections(int num_clients)
     }
 
 
-
-
-
-
-
-
-
-
     num_connected_clients = 0;
 
     for (client_num = 0; client_num < num_clients; client_num++)
@@ -333,33 +310,6 @@ void setup_client_connections(int num_clients)
         printf("Failed to connect to all %d clients!\n", num_clients);
         exit(1);
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

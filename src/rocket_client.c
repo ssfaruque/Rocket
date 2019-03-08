@@ -28,11 +28,6 @@ char server_addr[32];  // IPV4 address of the server
 
 pthread_mutex_t *lock = NULL; // used for independent listender
 
-
-
-//struct sigaction sa;   // used for signal handling
-
-
 /* retrieves the starting address of the memory region corresponding 
    to the particular client
 */
@@ -104,37 +99,6 @@ void* independent_listener_client(void* param)
 }
 
 
-//Defined this way because it is going to be running as a thread independently where void* param will be the accepted socket file descriptor
-/*
-void* independent_listener (void* param) 
-{
-  int acc_sock = *((int *)param);
-  printf("Listening to accepted socket: %d\n", acc_sock);
-  char buf[BASE_BUFFER_SIZE];
-
-  for(; ;)
-    {
-      int val = recv_msg(acc_sock, buf, BASE_BUFFER_SIZE);
-      printf("Client receiving msg of size %d\n", val);
-
-      buf[val] = '\0';
-      char* temp_str;
-      int page_number = (int)strtol(buf, &temp_str, 10);
-      printf("Page number: %d \n", page_number);
-      pthread_mutex_lock(&lock[page_number]);
-      void* page_addr = get_base_address() + (page_number*PAGE_SIZE);
-      mprotect(page_addr, PAGE_SIZE, PROT_READ);
-      if(send_msg(acc_sock, page_addr, PAGE_SIZE) != 0)
-	{
-	  printf("Could not send page requested!\n");
-	  exit(1);
-	}
-      mprotect(page_addr, PAGE_SIZE, PROT_NONE);
-      pthread_mutex_unlock(&lock[page_number]);
-    }
-}
-*/
-
 // Programmed this like on the sigaction manpage: http://man7.org/linux/man-pages/man2/sigaction.2.html
 // TODO: locking, buffering, socket communication, copying incoming page, setting protection for page using mprotect, etc.
 
@@ -175,35 +139,14 @@ void sigfault_handler(int sig, siginfo_t *info, void *ucontext)
 
     char data[PAGE_SIZE];
 
-
-    // int ack_val = 0;
-
-    // printf("Client waiting for ack...\n");
-    // while(ack_val == 0)
-    // {
-    //     recv_msg(sig_socket, &ack_val, sizeof(ack_val));
-    // }
-    // printf("Client has received ack: %d\n", ack_val);
-    
-
     for(int total = PAGE_SIZE, index = 0; total != 0; )
     {
-        //printf("First line of for loop\n");
         int val = recv_msg(sig_socket, &data[index], total);
-        // while(val <= 0)
-        // {
-        //     val = recv_msg(sig_socket, &data[index], total);
-        // }
-
-        //printf("val: %d\n", val);
         total = total - val;
         index = index + val;
     }
 
     printf("data: %d\n", data[0]);
-
-
-    //void* page_addr = get_base_address() + (page_number*PAGE_SIZE);
 
     mprotect(curr_addr, PAGE_SIZE, PROT_WRITE);
     memcpy(curr_addr, data, PAGE_SIZE);
@@ -222,40 +165,9 @@ void setup_signal_handler()
     sa.sa_sigaction = sigfault_handler;
     sigemptyset(&sa.sa_mask);
     sa.sa_flags = SA_SIGINFO;
-    //sigaction(SIGSEGV, &sa, NULL);
     if(sigaction(SIGSEGV, &sa, NULL) == 0)
         printf("Failed to setup sigfault handler\n");
 }
-
-
-
-// void init_client_socket(int num_clients, int port, const char* IPV4_ADDR)
-// {
-//     master_socket = create_socket();
-//     sig_socket    = create_socket();
-
-//     if(master_socket == -1 || sig_socket == -1)
-//     {
-//         printf("Failed to create server socket!\n");
-//         exit(1);
-//     }
-
-//     sockaddr_in_t addr = create_socket_addr(port, IPV4_ADDR);
-//     sockaddr_in_t sig_socket_addr = create_socket_addr(9003, IPV4_ADDR);
-
-//     /* Attempting to establish a connection on the socket */
-//     if(connect_socket(master_socket, &addr) == -1)
-//     {
-//         printf("Client could not connect to server with IP: %s!\n", IPV4_ADDR);
-//         exit(1);
-//     }
-
-//     if(connect_socket(sig_socket, &sig_socket_addr) == -1)
-//     {
-//         printf("sig_socket could not connect to server with IP: %s!\n", IPV4_ADDR);
-//         exit(1);
-//     }
-// }
 
 
 void init_socket(socket_t* sock, int num_clients, int port, const char* IPV4_ADDR)
@@ -277,62 +189,6 @@ void init_socket(socket_t* sock, int num_clients, int port, const char* IPV4_ADD
         exit(1);
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-// void get_client_number_from_server()
-// {
-//     int num_bytes_received = recv_msg(master_socket, &client_num, sizeof(client_num));
-
-//     if(num_bytes_received <= 0)
-//     {
-//         printf("Client failed to receive its client number from the server!\n");
-//         exit(1);
-//     }
-// }
-
-
-// void send_acknowledgement_to_server()
-// {
-//     int ack = 1;
-//     int num_bytes_sent = send_msg(master_socket, (char*) &ack, sizeof(ack));
-
-//     if(num_bytes_sent <= 0)
-//     {
-//         printf("Client %d failed to send its acknowledgement to the client!\n", client_num);
-//         exit(1);
-//     }
-// }
-
-
-// void get_finished_status_from_server()
-// {
-//     int server_finished_connecting = 0;
-//     int num_bytes_received = recv_msg(master_socket, &server_finished_connecting, sizeof(server_finished_connecting));
-
-//     if(num_bytes_received <= 0)
-//     {
-//         printf("Client did not receive message from server!\n");
-//         exit(1);
-//     }
-
-//     if(!server_finished_connecting)
-//     {
-//         printf("Server did not finish connecting to all of the clients\n");
-//         exit(1);
-//     }
-// }
-
 
 
 void get_client_number_from_server(socket_t* sock)
@@ -377,16 +233,6 @@ void get_finished_status_from_server(socket_t* sock)
         exit(1);
     }
 }
-
-
-
-
-
-
-
-
-
-
 
 
 void setup_listener_locks()
@@ -455,16 +301,7 @@ int rocket_client_init(int addr_size, int number_of_clients)
     sleep(5);
 
 
-
-
-
-
-
-
-
     init_socket(&sig_socket, num_clients, 9002 - 5353, SERVER_IP);
-
-
 
     get_client_number_from_server(&sig_socket);
     printf("sig_socket received client number: %d\n", client_num);
@@ -477,9 +314,6 @@ int rocket_client_init(int addr_size, int number_of_clients)
 
 
     sleep(5);
-
-
-
 
     printf("client starting address: %p\n", (char*)get_respective_client_base_address());
 
@@ -498,7 +332,6 @@ int rocket_client_exit()
     close_socket(master_socket);
     return 0;
 }
-
 
 /*  Client gets ownership of the page
     Return: 0 for success, -1 for failure */
