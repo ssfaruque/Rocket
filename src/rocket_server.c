@@ -26,6 +26,15 @@ PageOwnership* pageOwnerships = NULL;
 
 
 
+void parse_buf(char* buf, int buf_length, int* operation, int* page_num)
+{
+    char* ptr = strtok(buf, ",");
+    *operation = (int)strtol(ptr, NULL, 10);
+    ptr = strtok(NULL, ",");
+    *page_num = (int)strtol(ptr, NULL, 10);
+}
+
+
 void* independent_listener_server(void* param)
 {
   int acc_sock = *((int *)param);                                                                                                                                                                           
@@ -46,25 +55,35 @@ void* independent_listener_server(void* param)
 
      pthread_mutex_lock(&server_socket_lock);
 
+      printf("acc_sock: %d\n", acc_sock);
       printf("Server receiving msg of size %d\n", val);
       
       printf("buf: %s\n", buf);
 
-      char* temp_str;
-      int page_number = (int)strtol(buf, &temp_str, 10);
-      printf("Page number: %d \n", page_number);
+
+      int operation = -1, page_number = -1;
+      char copy_buf[BASE_BUFFER_SIZE];
+      strcpy(copy_buf, buf);
+      parse_buf(copy_buf, strlen(copy_buf), &operation, &page_number);
 
 
-      
+      printf("operation: %d, page_number %d\n", operation, page_number);
 
-      int target_client_sock = pageOwnerships[page_number].clientExclusiveWriter->client_socket;
+
+     if(operation == WRITING)
+     {
+      //char* temp_str;
+      //int page_number = (int)strtol(buf, &temp_str, 10);
+      //printf("Page number: %d \n", page_number);
+
+      int target_client_sock = pageOwnerships[page_number].clientExclusiveWriter.client_socket;
 
       printf("client2_sock: %d\n", target_client_sock);
     
       printf("client1_sock: %d\n", acc_sock);
 
       //SENDING PAGE REQUEST TO CLIENT 2
-      if(send_msg(target_client_sock, buf, strlen(buf)) <= 0)
+      if(send_msg(target_client_sock, &page_number, sizeof(int)) <= 0)
 	{
 	  printf("Could not send message for page request!\n");
 	  exit(1);
@@ -82,7 +101,7 @@ void* independent_listener_server(void* param)
     printf("Page requested successfully from client 2\n");
       //UPDATE PAGE OWNERSHIPS!!! WE ARE ONLY CHANGING SOCKET. NOTHING ELSE.
 
-      pageOwnerships[page_number].clientExclusiveWriter->client_socket = acc_sock;
+      pageOwnerships[page_number].clientExclusiveWriter.client_socket = acc_sock;
 
     printf("Updated page ownership\n");
       //SENDING PAGE FROM MASTER TO CLIENT 1
@@ -91,6 +110,68 @@ void* independent_listener_server(void* param)
       send_msg(acc_sock, &data, PAGE_SIZE);
 
       pthread_mutex_unlock(&server_socket_lock);
+  }
+
+
+
+
+
+
+  else if(operation == READING)
+  {
+      int target_client_sock = pageOwnerships[page_number].clientExclusiveWriter.client_socket;
+
+      // if there is no exclusive writer
+      if(target_client_sock == -1)
+      {
+          target_client_sock = pageOwnerships[page_number].clientReaders.readers[0].client_socket;
+      }
+
+      printf("client2_sock: %d\n", target_client_sock);
+    
+      printf("client1_sock: %d\n", acc_sock);
+
+      //SENDING PAGE REQUEST TO CLIENT 2
+      if(send_msg(target_client_sock, &page_number, sizeof(int)) <= 0)
+	{
+	  printf("Could not send message for page request!\n");
+	  exit(1);
+	}
+      printf("Page request sent to client2\n");
+      char data[PAGE_SIZE];
+
+      //RECEIVING PAGE FROM CLIENT 2
+      for(int total = PAGE_SIZE, index = 0; total != 0; )
+	{
+	  int val = recv_msg(target_client_sock, &data[index], total);
+	  total = total - val;
+	  index = index + val;
+	}
+    printf("Page requested successfully from client 2\n");
+      
+      //UPDATE PAGE OWNERSHIPS!!!
+        int index =  pageOwnerships[page_number].clientReaders.num_readers;
+        pageOwnerships[page_number].clientReaders.readers[index].client_socket = acc_sock;
+        pageOwnerships[page_number].clientReaders.num_readers++;
+
+
+      pageOwnerships[page_number].clientExclusiveWriter.client_socket = -1;
+
+    printf("Updated page ownership\n");
+      //SENDING PAGE FROM MASTER TO CLIENT 1
+    printf("Attempting to send page from master to client 1\n");
+
+
+      if(send_msg(acc_sock, &data, PAGE_SIZE) <= 0)
+      {
+          printf("Failed to send page data\n");
+      }
+
+      printf("data: %d\n", data[0]);
+
+      pthread_mutex_unlock(&server_socket_lock);
+  }
+
   }
   return NULL;
 }
@@ -138,19 +219,19 @@ void init_server_socket(int num_clients, int port, const char* IPV4_ADDR)
 
 void print_client_info(ClientInfo* clientInfo)
 {
-    sockaddr_in_t client_addr = clientInfo->client_addr;
-    unsigned short int sin_family = client_addr.sin_family;
-    uint16_t port = client_addr.sin_port;
-    uint32_t s_addr = client_addr.sin_addr.s_addr;
+    //sockaddr_in_t client_addr = clientInfo->client_addr;
+    // unsigned short int sin_family = client_addr.sin_family;
+    // uint16_t port = client_addr.sin_port;
+    // uint32_t s_addr = client_addr.sin_addr.s_addr;
 
-    printf("client ip addr: %s\n", clientInfo->client_ip_addr);
-    printf("client num: %d\n", clientInfo->client_num);
+    // //printf("client ip addr: %s\n", clientInfo->client_ip_addr);
+    // //printf("client num: %d\n", clientInfo->client_num);
     printf("client_socket: %d\n", clientInfo->client_socket);
     printf("sig_socket: %d\n", clientInfo->sig_socket);
     
-    printf("sin_family: %d\n", sin_family);
-    printf("port: %d\n", port);
-    printf("s_addr: %d\n\n", s_addr);
+    // printf("sin_family: %d\n", sin_family);
+    // printf("port: %d\n", port);
+    // printf("s_addr: %d\n\n", s_addr);
 }
 
 
@@ -319,7 +400,7 @@ void setup_client_connections(int num_clients)
     for(page_num = 0; page_num < address_size / PAGE_SIZE; page_num++)
     {
         int client_index = page_num / num_pages_each_clients;
-        pageOwnerships[page_num].clientExclusiveWriter = &clientInfos[client_index];
+        pageOwnerships[page_num].clientExclusiveWriter = clientInfos[client_index];
     }
 }
 

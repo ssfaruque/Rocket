@@ -28,6 +28,12 @@ char server_addr[32];  // IPV4 address of the server
 
 pthread_mutex_t *lock = NULL; // used for independent listender
 
+
+
+
+enum Operation currentOperation;
+
+
 /* retrieves the starting address of the memory region corresponding 
    to the particular client
 */
@@ -107,9 +113,8 @@ void* independent_listener_client(void* param)
 2. This gets the page back from the server/master and sets write permission for itself.
 */
 
-void sigfault_handler(int sig, siginfo_t *info, void *ucontext)
+void sigfault_helper(int sig, siginfo_t *info, void *ucontext)
 {
-
     printf("STARTING SEGFAULT HANDLER!\n");
 
     char *curr_addr = info->si_addr;
@@ -124,7 +129,7 @@ void sigfault_handler(int sig, siginfo_t *info, void *ucontext)
     
     pthread_mutex_lock(&lock[page_number]);
     char buf[BASE_BUFFER_SIZE];
-    snprintf(buf, BASE_BUFFER_SIZE, "%d", page_number);
+    snprintf(buf, BASE_BUFFER_SIZE, "%d,%d", (int)currentOperation, page_number);
 
     printf("buf: %s\n", buf);
     
@@ -148,13 +153,52 @@ void sigfault_handler(int sig, siginfo_t *info, void *ucontext)
 
     printf("data: %d\n", data[0]);
 
+    int protection = PROT_NONE;
+
+    printf("protection: %d %d %d\n", PROT_READ, PROT_WRITE, PROT_NONE);
+
+    switch(currentOperation)
+    {
+        case WRITING:
+        protection = PROT_WRITE;
+        break;
+
+        case READING:
+        protection = PROT_READ;
+        break;
+
+        case NONE:
+        protection = PROT_NONE;
+        break;
+
+    }
+
+    printf("protection: %d\n", protection);
+
+    // mprotect(curr_addr, PAGE_SIZE, protection);
+    // memcpy(curr_addr, data, PAGE_SIZE);
+    // printf("REACHED HEREQ@#@#@#\n");
+
     mprotect(curr_addr, PAGE_SIZE, PROT_WRITE);
     memcpy(curr_addr, data, PAGE_SIZE);
+
+    if(currentOperation == READING)
+    {
+        mprotect(curr_addr, PAGE_SIZE, PROT_READ);
+    }
+
+    printf("REACHED HEREQ@#@#@#\n");
+
+
     pthread_mutex_unlock(&lock[page_number]);
 
     printf("FINISHING SEGFAULT HANDLER!\n");
+}
 
 
+void sigfault_handler(int sig, siginfo_t *info, void *ucontext)
+{
+    sigfault_helper(sig, info, ucontext);
 }
 
 
@@ -285,6 +329,13 @@ int rocket_client_init(int addr_size, int number_of_clients)
     setup_signal_handler();
 
     const char* SERVER_IP = "128.120.211.76"; 
+
+
+
+
+
+
+
     init_socket(&master_socket, num_clients, 9002, SERVER_IP);
 
     get_client_number_from_server(&master_socket);
@@ -298,7 +349,16 @@ int rocket_client_init(int addr_size, int number_of_clients)
 
     printf("client starting address: %p\n", (char*)get_respective_client_base_address());
 
+
+    printf("1. Client num: %d\n", client_num);
+
     sleep(5);
+
+
+
+
+
+
 
 
     init_socket(&sig_socket, num_clients, 9002 - 5353, SERVER_IP);
@@ -312,8 +372,15 @@ int rocket_client_init(int addr_size, int number_of_clients)
     get_finished_status_from_server(&sig_socket);
     printf("The server has finished connecting to all %d clients\n", num_clients);
 
+    printf("2. Client num: %d\n", client_num);
 
     sleep(5);
+
+
+
+
+
+
 
     printf("client starting address: %p\n", (char*)get_respective_client_base_address());
 
@@ -364,7 +431,18 @@ int rocket_dealloc(void* address)
 }
 
 
-char* client_communicate(socket_t network_socket)
-{ 
-    return 0;  
+void rocket_write_addr(void* addr, void* data, int num_bytes)
+{
+    currentOperation = WRITING;
+    memcpy(addr, data, num_bytes);
+    memcpy(addr, data, num_bytes);
+}
+
+
+
+void rocket_read_addr(void* addr, void* buf, int num_bytes)
+{
+    currentOperation = READING;
+    memcpy(buf, addr, num_bytes);
+    memcpy(buf, addr, num_bytes);
 }

@@ -8,7 +8,12 @@
 #define ASSERT(cond, str) {assert((cond) && (str));}
 
 
-
+enum Operation
+{
+    WRITING = 1,
+    READING = 2,
+    NONE = 0
+};
 
 /*typedef struct
 {

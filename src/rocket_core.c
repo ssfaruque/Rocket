@@ -62,8 +62,9 @@ PageOwnership* create_pageownerships(int number_of_pages, int number_of_clients)
 
     for(i = 0; i < number_of_pages; i++)
     {
-        pageOwnership->clientReaders = NULL;
-        pageOwnership->clientExclusiveWriter = NULL;
+        pageOwnership[i].clientReaders.num_readers = 0;
+        pageOwnership[i].clientExclusiveWriter.client_socket = -1;
+        pageOwnership[i].clientExclusiveWriter.sig_socket = -1;
     }
 
     return pageOwnership;

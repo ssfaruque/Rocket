@@ -14,7 +14,11 @@ void* rocket_alloc(int num_bytes);
 
 int rocket_dealloc(void* address);
 
-char* client_communicate(socket_t network_socket);
+void rocket_write_addr(void* addr, void* data, int num_bytes);
+
+
+void rocket_read_addr(void* addr, void* buf, int num_bytes);
+
 
 
 #endif  // ROCKET_CLIENT_H
