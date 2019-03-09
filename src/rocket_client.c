@@ -191,6 +191,18 @@ void init_socket(socket_t* sock, int num_clients, int port, const char* IPV4_ADD
 }
 
 
+void send_client_number_to_server(socket_t* sock) {
+    printf("Client sending client number: %d\n", client_num);
+
+    int num_bytes_sent = send_msg(*sock, (char*) &client_num, sizeof(client_num));
+    if(num_bytes_sent <= 0 )
+    {
+        printf("Client failed to send client number %d to the server\n", client_num);
+        exit(1);
+    }
+
+}
+
 void get_client_number_from_server(socket_t* sock)
 {
     int num_bytes_received = recv_msg(*sock, &client_num, sizeof(client_num));
@@ -200,6 +212,37 @@ void get_client_number_from_server(socket_t* sock)
         printf("Client failed to receive its client number from the server!\n");
         exit(1);
     }
+    printf("client count received %d \n",client_num);
+
+}
+
+
+void get_client_count_from_server(socket_t* sock)
+{
+    int client_count = -1;
+    int num_bytes_received = recv_msg(*sock, &client_count, sizeof(client_count));
+
+    if(num_bytes_received <= 0)
+    {
+        printf("Client failed to receive its client number from the server!\n");
+        exit(1);
+    }
+    printf("client count received %d \n",client_count);
+
+}
+
+void receive_acknowledgement_from_server(socket_t* sock)
+{
+    int received = 0;
+    recv_msg(*sock, (void*)&received, sizeof(int));
+
+    if(!received)
+    {
+        printf("Server failed to receive an acknowledgement from client %d\n", client_num);
+        exit(1);
+    }
+
+    printf("<client %d> - acknowledged: %d\n\n", client_num, received);
 }
 
 
@@ -300,18 +343,10 @@ int rocket_client_init(int addr_size, int number_of_clients)
 
     sleep(5);
 
-
+    // sig sockets
     init_socket(&sig_socket, num_clients, 9002 - 5353, SERVER_IP);
-
-    get_client_number_from_server(&sig_socket);
-    printf("sig_socket received client number: %d\n", client_num);
-
-    send_acknowledgement_to_server(&sig_socket);
-    printf("sig_socket %d sent its acknowledgement to the server!\n", client_num);
-
-    get_finished_status_from_server(&sig_socket);
-    printf("The server has finished connecting to all %d clients\n", num_clients);
-
+    get_client_count_from_server(&sig_socket);
+    send_client_number_to_server(&sig_socket);
 
     sleep(5);
 

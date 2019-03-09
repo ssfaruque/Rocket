@@ -154,8 +154,6 @@ void print_client_info(ClientInfo* clientInfo)
 }
 
 
-
-
 void setup_client_connections(int num_clients)
 {
     clientInfos  = (ClientInfo*) malloc(sizeof(ClientInfo) * num_clients);
@@ -163,8 +161,9 @@ void setup_client_connections(int num_clients)
     const char* SERVER_IP = INADDR_ANY; // TODO: change to actula server ip
     init_server_socket(num_clients, 9002, SERVER_IP);
 
-    int client_num;
 
+    /* connect to a client  socket*/
+    int client_num;
     for (client_num = 0; client_num < num_clients; client_num++)
     {
         /* connect to a client */
@@ -211,6 +210,7 @@ void setup_client_connections(int num_clients)
     }
 
 
+    // Check if  connected to all client sockets
     int connect_to_all_clients_success = (num_connected_clients == num_clients) ? 1 : 0;
 
     if(connect_to_all_clients_success)
@@ -237,9 +237,9 @@ void setup_client_connections(int num_clients)
     }
 
 
-    num_connected_clients = 0;
-
-    for (client_num = 0; client_num < num_clients; client_num++)
+    /* connect to a client sig socket*/
+    int client_count = 0;
+    for (client_count = 0; client_count < num_clients; client_count++)
     {
         /* connect to a client */
         sockaddr_in_t sig_socket_addr;
@@ -249,69 +249,33 @@ void setup_client_connections(int num_clients)
 
         if (sig_sock == -1)
         {
-            printf("Server failed to connect to client %d!\n", client_num);
+            printf("Server failed to connect. Client count: %d\n", client_count);
             exit(1);
         }
+        printf("Connected to client sig socket with client count %d!\n", client_count);
 
-        clientInfos[client_num].sig_socket = sig_sock; 
-
-        print_client_info(&clientInfos[client_num]); 
-
-
-        printf("Connected to client %d!\n", client_num);
-
-        /* send the client num to the connected client */
-        int num_bytes_sent = send_msg(sig_sock, (void*)&client_num, sizeof(client_num));
-
+        // send client count (Just for testing)
+         int num_bytes_sent = send_msg(sig_sock, (void*)&client_count, sizeof(client_count));
         if(num_bytes_sent <= 0 )
         {
             printf("Server failed to send client number %d to the respective client\n", client_num);
             exit(1);
         }
 
-        /* receive an acknowledgement from the client */
-        int received = 0;
-        recv_msg(sig_sock, (void*)&received, sizeof(int));
-
-        if(!received)
+        /* receive the client num from the connected client */
+        int number = 0;
+        int num_bytes_received = recv_msg(sig_sock, &number, sizeof(number));
+        if(num_bytes_received <= 0)
         {
-            printf("Server failed to receive an acknowledgement from client %d\n", client_num);
+            printf("Server failed to receive client number from the client!\n");
             exit(1);
         }
+        printf("Client number received %d\n", number);
 
-        printf("<client %d> - acknowledged: %d\n\n", client_num, received);
+        clientInfos[client_num].sig_socket = sig_sock; 
 
-        num_connected_clients++;
-
+        print_client_info(&clientInfos[client_num]); 
     }
-
-
-    connect_to_all_clients_success = (num_connected_clients == num_clients) ? 1 : 0;
-
-    if(connect_to_all_clients_success)
-    {
-        for (client_num = 0; client_num < num_clients; client_num++)
-        {
-            int num_bytes_sent = send_msg(clientInfos[client_num].sig_socket, (void*)&connect_to_all_clients_success, sizeof(connect_to_all_clients_success));
-
-            if(num_bytes_sent <= 0 )
-            {
-                printf("Server failed to send client number %d to the respective client\n", client_num);
-                exit(1);
-            }
-        }
-
-        printf("Server successfully connected to all %d clients!\n", num_clients);
-        sleep(5);
-    }
-
-    else
-    {
-        printf("Failed to connect to all %d clients!\n", num_clients);
-        exit(1);
-    }
-
-
 
     int page_num;
     int num_pages_each_clients = (address_size / PAGE_SIZE) / num_clients;
@@ -322,7 +286,6 @@ void setup_client_connections(int num_clients)
         pageOwnerships[page_num].clientExclusiveWriter = &clientInfos[client_index];
     }
 }
-
 
 void setup_connecting_clients()
 {
