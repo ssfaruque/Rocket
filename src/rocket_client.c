@@ -80,20 +80,20 @@ void* independent_listener_client(void* param)
   
   char buf[BASE_BUFFER_SIZE];
   while (1) {
-      printf("Inside independent_listener_client\n");
+      //printf("Inside independent_listener_client\n");
 
       int val = recv_msg(master_socket, buf, BASE_BUFFER_SIZE);
 
      if(val == 0)
         continue;
 
-      printf("Client receiving msg of size %d\n", val);
+      //printf("Client receiving msg of size %d\n", val);
 
       buf[val] = '\0';
-      printf("buf: %s\n", buf);
+      //printf("buf: %s\n", buf);
       char* temp_str;
       int page_number = (int)strtol(buf, &temp_str, 10);
-      printf("Page number: %d \n", page_number);
+      printf("[INFO] Page number: %d \n", page_number);
       
       pthread_mutex_lock(&lock[page_number]);
       void* page_addr = ((char*)get_base_address()) + (page_number*PAGE_SIZE);
@@ -103,7 +103,7 @@ void* independent_listener_client(void* param)
       	{    printf("Could not send page requested!\n");
 	        exit(1);
         }
-      printf("Client 2 succesfully sent page back to server\n");
+      printf("[INFO] Client successfully sent page back to server\n");
       mprotect(page_addr, PAGE_SIZE, PROT_NONE);
       pthread_mutex_unlock(&lock[page_number]);
 
@@ -123,7 +123,7 @@ void* independent_listener_client(void* param)
 
 void sigfault_helper(int sig, siginfo_t *info, void *ucontext)
 {
-    printf("STARTING SEGFAULT HANDLER!\n");
+    printf("[INFO] STARTING SEGFAULT HANDLER!\n");
 
     char *curr_addr = info->si_addr;
 
@@ -133,13 +133,13 @@ void sigfault_helper(int sig, siginfo_t *info, void *ucontext)
 
     int page_number = ((int)(curr_addr - base_addr)) / PAGE_SIZE;
 
-    printf("segfault handler, page number: %d\n", page_number);
+    printf("[INFO] segfault handler, page number: %d\n", page_number);
     
     pthread_mutex_lock(&lock[page_number]);
     char buf[BASE_BUFFER_SIZE];
     snprintf(buf, BASE_BUFFER_SIZE, "%d,%d,%d", client_num, (int)currentOperation, page_number);
 
-    printf("buf: %s\n", buf);
+    //printf("buf: %s\n", buf);
     
 
     if(send_msg(sig_socket, buf, strlen(buf)) <= 0)
@@ -148,7 +148,7 @@ void sigfault_helper(int sig, siginfo_t *info, void *ucontext)
         exit(1);
     }
 
-    printf("Successfuly sent page request, client req\n");
+    printf("[INFO] Successfully sent page request, client req\n");
 
     char data[PAGE_SIZE];
 
@@ -159,29 +159,29 @@ void sigfault_helper(int sig, siginfo_t *info, void *ucontext)
         index = index + val;
     }
 
-    printf("data: %d\n", data[0]);
+    //printf("data: %d\n", data[0]);
 
-    int protection = PROT_NONE;
+    //int protection = PROT_NONE;
 
-    printf("protection: %d %d %d\n", PROT_READ, PROT_WRITE, PROT_NONE);
+    //printf("protection: %d %d %d\n", PROT_READ, PROT_WRITE, PROT_NONE);
 
-    switch(currentOperation)
-    {
-        case WRITING:
-        protection = PROT_WRITE;
-        break;
+    // switch(currentOperation)
+    // {
+    //     case WRITING:
+    //     protection = PROT_WRITE;
+    //     break;
 
-        case READING:
-        protection = PROT_READ;
-        break;
+    //     case READING:
+    //     protection = PROT_READ;
+    //     break;
 
-        case NONE:
-        protection = PROT_NONE;
-        break;
+    //     case NONE:
+    //     protection = PROT_NONE;
+    //     break;
 
-    }
+    // }
 
-    printf("protection: %d\n", protection);
+    //printf("protection: %d\n", protection);
 
     // mprotect(curr_addr, PAGE_SIZE, protection);
     // memcpy(curr_addr, data, PAGE_SIZE);
@@ -195,12 +195,12 @@ void sigfault_helper(int sig, siginfo_t *info, void *ucontext)
         mprotect(curr_addr, PAGE_SIZE, PROT_READ);
     }
 
-    printf("REACHED HEREQ@#@#@#\n");
+    //printf("REACHED HEREQ@#@#@#\n");
 
 
     pthread_mutex_unlock(&lock[page_number]);
 
-    printf("FINISHING SEGFAULT HANDLER!\n");
+    printf("[INFO] FINISHING SEGFAULT HANDLER!\n");
 }
 
 
@@ -217,7 +217,7 @@ void setup_signal_handler()
     sa.sa_sigaction = sigfault_handler;
     sigemptyset(&sa.sa_mask);
     sa.sa_flags = SA_SIGINFO;
-    if(sigaction(SIGSEGV, &sa, NULL) == 0)
+    if(sigaction(SIGSEGV, &sa, NULL) < 0)
         printf("Failed to setup sigfault handler\n");
 }
 
@@ -311,13 +311,13 @@ void setup_independent_listener()
 void init_pages(int addr_size)
 {
     pages = mmap(get_base_address(), addr_size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-    printf("1)\n");
+    //printf("1)\n");
     mprotect(get_base_address(), addr_size, PROT_NONE);
-    printf("2)\n");
+    //printf("2)\n");
     mprotect(get_respective_client_base_address(),  addr_size / num_clients, PROT_WRITE);
-    printf("3)\n");
+    //printf("3)\n");
    // memset(get_respective_client_base_address(), 0, addr_size / num_clients);
-    printf("4)\n");
+    //printf("4)\n");
 
     // // FOR TESTING
     // char* ptr = (char*)get_base_address();
@@ -351,18 +351,17 @@ int rocket_client_init(int addr_size, int number_of_clients)
     init_socket(&master_socket, num_clients, 9002, SERVER_IP);
 
     get_val_from_server(&master_socket, &client_num);
-    printf("Client received client number: %d\n", client_num);
+    printf("[INFO] Client received client number: %d\n", client_num);
 
     send_acknowledgement_to_server(&master_socket);
     printf("Client %d sent its acknowledgement to the server!\n", client_num);
 
     get_finished_status_from_server(&master_socket);
-    printf("The server has finished connecting to all %d clients\n", num_clients);
-
-    printf("client starting address: %p\n", (char*)get_respective_client_base_address());
+    printf("The server has finished connecting to all %d clients for client sockets\n", num_clients);
 
 
-    printf("1. Client num: %d\n", client_num);
+
+    //printf("1. Client num: %d\n", client_num);
 
     sleep(5);
 
@@ -376,15 +375,15 @@ int rocket_client_init(int addr_size, int number_of_clients)
     init_socket(&sig_socket, num_clients, 9002 - 5353, SERVER_IP);
 
     get_val_from_server(&sig_socket, &sig_dummy_val);
-    printf("sig_socket received client number: %d\n", client_num);
+    //printf("sig_socket received client number: %d\n", client_num);
 
     send_acknowledgement_to_server(&sig_socket);
     printf("sig_socket %d sent its acknowledgement to the server!\n", client_num);
 
     get_finished_status_from_server(&sig_socket);
-    printf("The server has finished connecting to all %d clients\n", num_clients);
+    printf("The server has finished connecting to all %d clients for signal sockets\n", num_clients);
 
-    printf("2. Client num: %d\n", client_num);
+    //printf("2. Client num: %d\n", client_num);
 
     sleep(5);
 
@@ -394,7 +393,7 @@ int rocket_client_init(int addr_size, int number_of_clients)
 
 
 
-    printf("client starting address: %p\n", (char*)get_respective_client_base_address());
+    printf("[INFO] Client starting address: %p\n", (char*)get_respective_client_base_address());
 
     setup_independent_listener();
 

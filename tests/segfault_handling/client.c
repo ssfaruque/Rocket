@@ -12,19 +12,6 @@
 const int NUM_CLIENTS = 4;
 
 
-void client_read()
-{
-    // assuming client 0 is the writer
-    while(1)
-    {
-        sleep(3);
-        int read_num = -1;
-        rocket_read_addr(get_base_address(), &read_num, sizeof(int));
-
-        printf("read num: %d\n", read_num);
-    }
-}
-
 
 int main(int argc, char* argv[])
 { 
@@ -47,7 +34,7 @@ int main(int argc, char* argv[])
     //     printf("Address %p: %d\n", get_base_address(), *((int*)(get_base_address())));
 
 
-    printf("Inside client.c, client_num: %d\n", client_num);
+    //printf("Inside client.c, client_num: %d\n", client_num);
 
 
     // DEMO WW2R
@@ -95,16 +82,16 @@ int main(int argc, char* argv[])
         int num = 123;
         printf("Client %d is writing\n", client_num);
         rocket_write_addr(get_base_address(), &num, sizeof(int));
-        printf("Address %p: %d\n", get_base_address(), *((int*)(get_base_address())));
+        printf("[OUTPUT] ADDRESS WRITTEN TO %p WITH VALUE %d\n", get_base_address(), *((int*)(get_base_address())));
     }
 
     else if(client_num == 1)
     {
-        sleep(10);
+        sleep(8);
         int num = 321;
         printf("Client %d is writing\n", client_num);
         rocket_write_addr(get_base_address(), &num, sizeof(int));
-        printf("Address %p: %d\n", get_base_address(), *((int*)(get_base_address())));
+        printf("[OUTPUT] ADDRESS WRITTEN TO %p WITH VALUE %d\n", get_base_address(), *((int*)(get_base_address())));
     }
 
 
@@ -114,13 +101,13 @@ int main(int argc, char* argv[])
         printf("Client Num: %d\n", client_num);
         int read_num = -1;
         rocket_read_addr(get_base_address(), &read_num, sizeof(int));
-        printf("read num: %d\n", read_num);
+        printf("[OUTPUT] READ VALUE: %d\n", read_num);
 
-        sleep(20);
+        sleep(11);
         printf("Client Num: %d\n", client_num);
         read_num = -1;
         rocket_read_addr(get_base_address(), &read_num, sizeof(int));
-        printf("read num: %d\n", read_num);
+        printf("[OUTPUT] READ VALUE: %d\n", read_num);
     }
 
     else if(client_num == 3)
@@ -129,13 +116,13 @@ int main(int argc, char* argv[])
         printf("Client Num: %d\n", client_num);
         int read_num = -1;
         rocket_read_addr(get_base_address(), &read_num, sizeof(int));
-        printf("read num: %d\n", read_num);
+        printf("[OUTPUT] READ VALUE: %d\n", read_num);
 
-        sleep(20);
+        sleep(11);
         printf("Client Num: %d\n", client_num);
         read_num = -1;
         rocket_read_addr(get_base_address(), &read_num, sizeof(int));
-        printf("read num: %d\n", read_num);
+        printf("[OUTPUT] READ VALUE: %d\n", read_num);
     }
     
 
