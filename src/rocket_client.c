@@ -24,6 +24,10 @@ int num_clients   = -1; // total number of clients in the application
 int client_num    = -1; // client id corresponding to this client, starts from 0
 int address_size  = -1; // total size of the shared memory in bytes  
 
+
+int sig_dummy_val = -1;
+
+
 char server_addr[32];  // IPV4 address of the server
 
 pthread_mutex_t *lock = NULL; // used for independent listender
@@ -79,6 +83,10 @@ void* independent_listener_client(void* param)
       printf("Inside independent_listener_client\n");
 
       int val = recv_msg(master_socket, buf, BASE_BUFFER_SIZE);
+
+     if(val == 0)
+        continue;
+
       printf("Client receiving msg of size %d\n", val);
 
       buf[val] = '\0';
@@ -129,7 +137,7 @@ void sigfault_helper(int sig, siginfo_t *info, void *ucontext)
     
     pthread_mutex_lock(&lock[page_number]);
     char buf[BASE_BUFFER_SIZE];
-    snprintf(buf, BASE_BUFFER_SIZE, "%d,%d", (int)currentOperation, page_number);
+    snprintf(buf, BASE_BUFFER_SIZE, "%d,%d,%d", client_num, (int)currentOperation, page_number);
 
     printf("buf: %s\n", buf);
     
@@ -235,16 +243,17 @@ void init_socket(socket_t* sock, int num_clients, int port, const char* IPV4_ADD
 }
 
 
-void get_client_number_from_server(socket_t* sock)
+void get_val_from_server(socket_t* sock, int* val)
 {
-    int num_bytes_received = recv_msg(*sock, &client_num, sizeof(client_num));
+    int num_bytes_received = recv_msg(*sock, val, sizeof(int));
 
     if(num_bytes_received <= 0)
     {
-        printf("Client failed to receive its client number from the server!\n");
+        printf("Client failed to receive a val from the server!\n");
         exit(1);
     }
 }
+
 
 
 void send_acknowledgement_to_server(socket_t* sock)
@@ -302,10 +311,13 @@ void setup_independent_listener()
 void init_pages(int addr_size)
 {
     pages = mmap(get_base_address(), addr_size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-
+    printf("1)\n");
     mprotect(get_base_address(), addr_size, PROT_NONE);
+    printf("2)\n");
     mprotect(get_respective_client_base_address(),  addr_size / num_clients, PROT_WRITE);
-    memset(get_respective_client_base_address(), 0, addr_size / num_clients);
+    printf("3)\n");
+   // memset(get_respective_client_base_address(), 0, addr_size / num_clients);
+    printf("4)\n");
 
     // // FOR TESTING
     // char* ptr = (char*)get_base_address();
@@ -328,7 +340,7 @@ int rocket_client_init(int addr_size, int number_of_clients)
 
     setup_signal_handler();
 
-    const char* SERVER_IP = "128.120.211.76"; 
+    const char* SERVER_IP = "128.120.211.170"; 
 
 
 
@@ -338,7 +350,7 @@ int rocket_client_init(int addr_size, int number_of_clients)
 
     init_socket(&master_socket, num_clients, 9002, SERVER_IP);
 
-    get_client_number_from_server(&master_socket);
+    get_val_from_server(&master_socket, &client_num);
     printf("Client received client number: %d\n", client_num);
 
     send_acknowledgement_to_server(&master_socket);
@@ -363,7 +375,7 @@ int rocket_client_init(int addr_size, int number_of_clients)
 
     init_socket(&sig_socket, num_clients, 9002 - 5353, SERVER_IP);
 
-    get_client_number_from_server(&sig_socket);
+    get_val_from_server(&sig_socket, &sig_dummy_val);
     printf("sig_socket received client number: %d\n", client_num);
 
     send_acknowledgement_to_server(&sig_socket);

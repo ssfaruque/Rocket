@@ -26,9 +26,11 @@ PageOwnership* pageOwnerships = NULL;
 
 
 
-void parse_buf(char* buf, int buf_length, int* operation, int* page_num)
+void parse_buf(char* buf, int buf_length, int* client_num, int* operation, int* page_num)
 {
     char* ptr = strtok(buf, ",");
+    *client_num = (int)strtol(ptr, NULL, 10);
+    ptr = strtok(NULL, ",");
     *operation = (int)strtol(ptr, NULL, 10);
     ptr = strtok(NULL, ",");
     *page_num = (int)strtol(ptr, NULL, 10);
@@ -61,10 +63,10 @@ void* independent_listener_server(void* param)
       printf("buf: %s\n", buf);
 
 
-      int operation = -1, page_number = -1;
+      int client_number = -1, operation = -1, page_number = -1;
       char copy_buf[BASE_BUFFER_SIZE];
       strcpy(copy_buf, buf);
-      parse_buf(copy_buf, strlen(copy_buf), &operation, &page_number);
+      parse_buf(copy_buf, strlen(copy_buf), &client_number, &operation, &page_number);
 
 
       printf("operation: %d, page_number %d\n", operation, page_number);
@@ -77,6 +79,15 @@ void* independent_listener_server(void* param)
       //printf("Page number: %d \n", page_number);
 
       int target_client_sock = pageOwnerships[page_number].clientExclusiveWriter.client_socket;
+
+
+      
+      if(target_client_sock == -1)
+      {
+          int index = pageOwnerships[page_number].clientReaders.num_readers - 1;
+          target_client_sock = pageOwnerships[page_number].clientReaders.readers[index].client_socket;
+      }
+
 
       printf("client2_sock: %d\n", target_client_sock);
     
@@ -101,7 +112,11 @@ void* independent_listener_server(void* param)
     printf("Page requested successfully from client 2\n");
       //UPDATE PAGE OWNERSHIPS!!! WE ARE ONLY CHANGING SOCKET. NOTHING ELSE.
 
-      pageOwnerships[page_number].clientExclusiveWriter.client_socket = acc_sock;
+    // pageOwnerships[page_number].clientExclusiveWriter.client_socket = acc_sock;
+    pageOwnerships[page_number].clientExclusiveWriter.client_socket = clientInfos[client_number].client_socket;
+    pageOwnerships[page_number].clientReaders.num_readers = 0;
+
+
 
     printf("Updated page ownership\n");
       //SENDING PAGE FROM MASTER TO CLIENT 1
@@ -124,7 +139,8 @@ void* independent_listener_server(void* param)
       // if there is no exclusive writer
       if(target_client_sock == -1)
       {
-          target_client_sock = pageOwnerships[page_number].clientReaders.readers[0].client_socket;
+          int index = pageOwnerships[page_number].clientReaders.num_readers - 1;
+          target_client_sock = pageOwnerships[page_number].clientReaders.readers[index].client_socket;
       }
 
       printf("client2_sock: %d\n", target_client_sock);
@@ -137,7 +153,7 @@ void* independent_listener_server(void* param)
 	  printf("Could not send message for page request!\n");
 	  exit(1);
 	}
-      printf("Page request sent to client2\n");
+      printf("Page request sent to client2, socket: %d\n", target_client_sock);
       char data[PAGE_SIZE];
 
       //RECEIVING PAGE FROM CLIENT 2
@@ -151,11 +167,12 @@ void* independent_listener_server(void* param)
       
       //UPDATE PAGE OWNERSHIPS!!!
         int index =  pageOwnerships[page_number].clientReaders.num_readers;
-        pageOwnerships[page_number].clientReaders.readers[index].client_socket = acc_sock;
+        pageOwnerships[page_number].clientReaders.readers[index].client_socket = clientInfos[client_number].client_socket;
         pageOwnerships[page_number].clientReaders.num_readers++;
 
 
       pageOwnerships[page_number].clientExclusiveWriter.client_socket = -1;
+      pageOwnerships[page_number].clientExclusiveWriter.sig_socket    = -1;
 
     printf("Updated page ownership\n");
       //SENDING PAGE FROM MASTER TO CLIENT 1
@@ -316,6 +333,12 @@ void setup_client_connections(int num_clients)
         printf("Failed to connect to all %d clients!\n", num_clients);
         exit(1);
     }
+
+
+
+
+
+
 
 
     num_connected_clients = 0;

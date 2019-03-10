@@ -5,7 +5,7 @@
 #define _1KB 1024
 
 const int SHARED_MEM_SIZE = _1KB * 20;
-const int NUM_CLIENTS = 2;
+const int NUM_CLIENTS = 4;
 
 int main(int argc, char* argv[])
 {
