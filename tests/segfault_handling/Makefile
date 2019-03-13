@@ -7,7 +7,7 @@ TARGETS := client server
 
 .PHONY := buildlib all clean
 
-all: buildlib $(TARGETS)
+all: $(TARGETS)
 
 client: client.c 
 	@echo "Building client program..."
