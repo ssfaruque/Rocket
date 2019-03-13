@@ -19,12 +19,6 @@ typedef struct
     ClientInfo readers[MAX_READER_SIZE];
 } ClientReaders;
 
-/*
-typedef struct
-{
-    ClientInfo* exclusiveWriter;
-} ClientExclusiveWriter;
-*/
 
 typedef ClientInfo ClientExclusiveWriter;
 

@@ -1,4 +1,3 @@
-
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -69,7 +68,6 @@ int close_socket(socket_t sock)
 {
     return close(sock);
 }
-
 
 
 int get_ip_addr(socket_t sock, char* buffer)
