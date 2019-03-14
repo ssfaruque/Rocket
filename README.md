@@ -50,7 +50,7 @@ Now, you should use `ifconfig` to check the IP address of the server machine. Th
 `$ ./client`
 
 
-#### The W2RW2R in action:
+#### The W2RW2R test in action:
 - As soon as all the clients are started, the server will aim to connect to them. This will be apparent from the messages you will notice on the terminals:
 ![img](/images/i3.png)
 
