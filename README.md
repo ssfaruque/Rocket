@@ -18,7 +18,6 @@ Now, you should use `ifconfig` to check the IP address of the server machine. Th
 
 `$ ./server`
 
-This should look something like this:
 
 #### Client 1 set-up (First writer):
 `$ ssh {username}@pc21.cs.ucdavis.edu`
