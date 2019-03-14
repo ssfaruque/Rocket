@@ -1,6 +1,8 @@
-# Rocket_DSM
-A highly configurable distributed shared memory solution for programmers
+# Rocket: A Distributed Shared Memory (DSM) Framework
 
-# Papers
-Reading CREW protocol through 
-http://web.eecs.umich.edu/~pmchen/papers/dunlap08.pdf
+![GitHub Logo](/images/r1.png)
+![GitHub Logo](/images/r2.png)
+![GitHub Logo](/images/r3.png)
+![GitHub Logo](/images/r4.png)
+![GitHub Logo](/images/r5.png)
+![GitHub Logo](/images/r6.png)
