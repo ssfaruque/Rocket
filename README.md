@@ -1,5 +1,29 @@
 # Rocket: A Distributed Shared Memory (DSM) Framework
 
+## Overview
+- [__A basic example to explain the logic__]
+- [__Understanding the role of signal sockets and client sockets__]
+- [__Understanding the client code and architecture__]
+- [__Understanding the server code and architecture__]
+- [__The code on the client and the server for the demo (W2RW2R)__]
+- [__Steps to run the in-class demo (W2RW2R)__]
+
+
+### A basic motivating example to explain the code logic
+![alt_img](/images/expl.png)
+
+We will use the above example/use-case to explain how the code would work. While writing Rocket, we would take simple examples and think about how the code should be written to allow for that functionality. We would then generalize these DSM functionalities to allow the framework to scale.
+
+__The example at a high-level__:
+- The example basically shows two clients and the master/server. Client 2 owns a page that Client 1 wants to write to.
+- Since Client 1 has no permissions for that page (in code, denoted by the `PROT_NONE` flag passed through to `mprotect`), to be able to request that page, Client 1 sends a write request with the page number to Master.
+- Master then requests the page from Client 2, invalidates Client 2's write permissions to the page, and then sends it back to Client 1. 
+- Client 1 is now sent the page, and given write access to it. Client 1 will now also copy the page over in memory, and in case any other client needs to read/write to it, the same process would happen all over again.
+
+##### Some things to keep in mind when there are readers:
+- If only one client wants read access, the process for that is exactly similar to the above mentioned procedure. The client with write access is the one the server requests the pages from and then sends it to the client who wants to read, revoking permissions to write on the original client, while granting read permissions to the new client. For reading `mprotect` takes in the `PROT_READ` flag.
+- We use the CREW protocol, therefore while there can be only one exclusive writer, there can be concurrent readers. Now if a client has read permissions and another client also wants to read, we follow a similar process to grant them permissions again. The new client who wants to read basically sends a read request for that page to master, and master finds the last client who was given read permissions, and then requests the page from them. However, it does not invalidate this reader, like in the writing case.
+
 
 ### Steps to run test cases for W2RW2R example (demo):
 - Here, to emulate the distributed systems, we will be using the CSIF machines available to CS students. We will show how to `ssh` into these to set up the server as well as the clients. We assume that your Kerberos username is represented as `{username}`. We are also assuming that you have downloaded/cloned and stored our repository in the root directory in the CSIF machines.
