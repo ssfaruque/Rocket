@@ -1,12 +1,12 @@
 # Rocket: A Distributed Shared Memory (DSM) Framework
 
 ## Overview
-- [__A basic example to explain the logic__]
-- [__Understanding the role of signal sockets and client sockets__]
-- [__Understanding the client code and architecture__]
-- [__Understanding the server code and architecture__]
-- [__The code on the client and the server for the demo (W2RW2R)__]
-- [__Steps to run the in-class demo (W2RW2R)__]
+- [__A basic example to explain the logic__](https://github.com/ecs251-w19-ucdavis/Rocket#a-basic-motivating-example-to-explain-the-code-logic)
+- [__Understanding the role of signal sockets and client sockets__]()
+- [__Understanding the client code and architecture__]()
+- [__Understanding the server code and architecture__]()
+- [__The code on the client and the server for the demo (W2RW2R)__]()
+- [__Steps to run the in-class demo (W2RW2R)__]()
 
 
 ### A basic motivating example to explain the code logic
@@ -15,7 +15,7 @@
 We will use the above example/use-case to explain how the code would work. While writing Rocket, we would take simple examples and think about how the code should be written to allow for that functionality. We would then generalize these DSM functionalities to allow the framework to scale.
 
 __The example at a high-level__:
-- The example basically shows two clients and the master/server. Client 2 owns a page that Client 1 wants to write to.
+- The example basically shows two clients and the master/server. Client 2 owns a page that Client 1 wants to write to. Thus, a page fault is raised in Client 1 since it does not own the page.
 - Since Client 1 has no permissions for that page (in code, denoted by the `PROT_NONE` flag passed through to `mprotect`), to be able to request that page, Client 1 sends a write request with the page number to Master.
 - Master then requests the page from Client 2, invalidates Client 2's write permissions to the page, and then sends it back to Client 1. 
 - Client 1 is now sent the page, and given write access to it. Client 1 will now also copy the page over in memory, and in case any other client needs to read/write to it, the same process would happen all over again.
