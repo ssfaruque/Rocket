@@ -11,10 +11,10 @@
 
 
 ### Code structure
-![Alt text](./RocketUML.svg)
+![Alt text](./images/RocketUML.svg)
 
 ### A basic motivating example to explain the code logic
-![alt_img](/images/expl.png)
+![alt_img](/images/expl2.png)
 
 We will use the above example/use-case to explain how the code would work. While writing Rocket, we would take simple examples and think about how the code should be written to allow for that functionality. We would then generalize these DSM functionalities to allow the framework to scale.
 
