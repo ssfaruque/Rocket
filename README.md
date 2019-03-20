@@ -99,10 +99,49 @@ void sigfault_helper(int sig, siginfo_t *info, void *ucontext)
 
 As can be seen above, this function essentially does the following:
 - As soon as there is a page fault (signal fault), the function tries to find the address of the page which is causing the fault. This is stored in `curr_addr`. 
-- Since we have a simplifying assumption in our system where we know the starting base addresses, we can easily find out the page number by doing basic arithmetic: `int page_number = ((int)(curr_addr - base_addr)) / PAGE_SIZE;` Thus, the client now knows the page number it wants access to, as well as the kind of access it wants (read or write). Since the programmer has to use our API for reading or writing, we know whether they want to read or write to a page in or out of memory, and we store this information in `currentOperation`. This type can hold values of `READING` or `WRITING` or `NONE`.
+- Since we have a simplifying assumption in our system where we know the starting base addresses as well as the page sizes used (4KB is standard), we can easily find out the page number by doing basic arithmetic: `int page_number = ((int)(curr_addr - base_addr)) / PAGE_SIZE;` Thus, the client now knows the page number it wants access to, as well as the kind of access it wants (read or write). Since the programmer has to use our API for reading or writing, we know whether they want to read or write to a page in or out of memory, and we store this information in `currentOperation`. This type can hold values of `READING` or `WRITING` or `NONE`.
 - Now, the client sends the request for this page by sending it's client number, the operation it wants to perform (access level), as well as the page number. This information is sent as a string which we will parse later at the server side.
 - It then assumes that the server would have complied with the request and hence, found out the page and attempted to now send it back to it (this client). Thus, the signal handler concludes by receiving the page from the master server and then doing an `mprotect` to grant itself write permissions (`PROT_WRITE` or `PROT_READ` depending on `currentOperation`) to this page address and then a `memcpy` to copy the page in memory at that address.
 
+Next, we discuss another key functionality of the Rocket client. Going back to the diagram above, since Client 1 wanted permissions for a page owned by Client 2: Client 1 would encounter a page fault and have to send a page request to the server. This is the part we have already discussed so far, where the signal fault handler comes into play. The other functionality needed in the client is the response back with a page when contacted by the server. That is, once Client 1 sends the server a page request, the server contacts Client 2 and asks it for the same page. The functionality present in the clients which allow them to respond to such requests as well as send back a page while revoking their own permissions is defined in the `independent_listener_client` function:
+```c
+void *independent_listener_client(void *param)
+{
+    char buf[BASE_BUFFER_SIZE];
+    while (1)
+    {
+        int val = recv_msg(master_socket, buf, BASE_BUFFER_SIZE);
+
+        if (val == 0)
+            continue;
+
+        buf[val] = '\0';
+        char *temp_str;
+        int page_number = (int)strtol(buf, &temp_str, 10);
+        printf("[INFO] Page number: %d \n", page_number);
+
+        pthread_mutex_lock(&lock[page_number]);
+        void *page_addr = ((char *)get_base_address()) + (page_number * PAGE_SIZE);
+        mprotect(page_addr, PAGE_SIZE, PROT_READ);
+
+        if (send_msg(master_socket, page_addr, PAGE_SIZE) <= 0)
+        {
+            printf("Could not send page requested!\n");
+            exit(1);
+        }
+        printf("[INFO] Client successfully sent page back to server\n");
+        mprotect(page_addr, PAGE_SIZE, PROT_NONE);
+        pthread_mutex_unlock(&lock[page_number]);
+    }
+    return NULL;
+}
+```
+A number of things are happening here that are relevant:
+- This function basically runs on a independent thread on each client listening for server requests. 
+- Now, it first receives the page number from the server. 
+- Then, it aims to send the page back to the server and if the operation is successful, it will revoke it's current permissions to `NONE` (or `PROT_NONE` in `mprotect`). 
+- Unlike the signal fault handler function which was using the `sig sockets`, this function utilizes `client sockets` for communication.
+- Moreover, we utilize locks to ensure that only one client enters the critical sections (of both signal fault handler and this function) for a particular page number at any given time to provide consistency guarantees and avoid race conditions.
 
 ### Steps to run test cases for W2RW2R example (demo):
 - Here, to emulate the distributed systems, we will be using the CSIF machines available to CS students. We will show how to `ssh` into these to set up the server as well as the clients. We assume that your Kerberos username is represented as `{username}`. We are also assuming that you have downloaded/cloned and stored our repository in the root directory in the CSIF machines.
