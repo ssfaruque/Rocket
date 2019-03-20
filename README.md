@@ -11,7 +11,7 @@
 
 
 ### Code structure
-![Alt text](./images/RocketUML.svg)
+![RocketUML](./RocketUML.svg)
 
 ### A basic motivating example to explain the code logic
 ![alt_img](/images/expl2.png)
