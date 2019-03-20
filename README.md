@@ -2,11 +2,11 @@
 
 ## Overview
 - [__A basic example to explain the logic__](https://github.com/ecs251-w19-ucdavis/Rocket#a-basic-motivating-example-to-explain-the-code-logic)
-- [__Understanding the role of signal sockets and client sockets__]()
-- [__Understanding the client code and architecture__]()
+- [__Understanding the role of signal sockets and client sockets__](https://github.com/ecs251-w19-ucdavis/Rocket#the-client-and-signal-sockets)
+- [__Understanding the client code and architecture__](https://github.com/ecs251-w19-ucdavis/Rocket#the-client-code-and-architecture)
 - [__Understanding the server code and architecture__]()
 - [__The code on the client and the server for the demo (W2RW2R)__]()
-- [__Steps to run the in-class demo (W2RW2R)__]()
+- [__Steps to run the in-class demo (W2RW2R)__](https://github.com/ecs251-w19-ucdavis/Rocket#steps-to-run-test-cases-for-w2rw2r-example-demo)
 
 
 ### A basic motivating example to explain the code logic
