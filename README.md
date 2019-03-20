@@ -306,6 +306,81 @@ This is a large and complicated function, but the working can be broken down as 
 
 In case instead of requesting write access to the page, Client 1 wanted read access, the code progresses slightly differently. Like before, we find the `target_client_sock` and see if that value is a -1 or not. It can only be -1 in case there are no active exclusive writers at the moment. If it is, we again set the target client to be the last reader who had access to the page. Everything else progresses as before, and the only key difference is in the updation of page ownerships. Since this was a read request, we add the current reader (Client 1, say) to the list of all existing concurrent readers for now. We increment the indexing variable to ensure that the next time a reader is added, they will be again assigned to the next possible position in the array. Finally, in case this wasn't already so, we reinitialize the writer sockets to be -1, so that there cannot be a writer at this point of time. 
 
+### Understanding the code for the test/in-class demo (W2RW2R):
+The code for the clients for the tests/demo will be discussed here. The server code is just starting the server using `rocket_server_init()` so that is easy to understand as is. The `main` function definition for `client.c` (in `tests/segfault_handling/`) is detailed below:
+```c
+int main(int argc, char* argv[])
+{ 
+
+
+    if(rocket_client_init(SHARED_MEM_SIZE, NUM_CLIENTS, "128.120.211.76") == -1)
+    {
+        printf("Failed to initialize rocket client!\n");
+        return 1;
+    }
+
+    // Writes the value 123 to the base address
+    if(client_num == 0)
+    {
+        int num = 123;
+        printf("Client %d is writing\n", client_num);
+        rocket_write_addr(get_base_address(), &num, sizeof(int));
+        printf("[OUTPUT] ADDRESS WRITTEN TO %p WITH VALUE %d --- %s\n", get_base_address(), *((int*)(get_base_address())), get_local_time());
+    }
+
+    // writes the value 321 to the base address
+    else if(client_num == 1)
+    {
+        sleep(8);
+        int num = 321;
+        printf("Client %d is writing\n", client_num);
+        rocket_write_addr(get_base_address(), &num, sizeof(int));
+        printf("[OUTPUT] ADDRESS WRITTEN TO %p WITH VALUE %d --- %s\n", get_base_address(), *((int*)(get_base_address())), get_local_time());
+    }
+
+
+    // reads from base address 2 times
+    else if(client_num == 2)
+    {
+        sleep(5);
+        printf("Client Num: %d\n", client_num);
+        int read_num = -1;
+        rocket_read_addr(get_base_address(), &read_num, sizeof(int));
+        printf("[OUTPUT] READ VALUE: %d --- %s\n", read_num, get_local_time());
+
+        sleep(11);
+        printf("Client Num: %d\n", client_num);
+        read_num = -1;
+        rocket_read_addr(get_base_address(), &read_num, sizeof(int));
+        printf("[OUTPUT] READ VALUE: %d --- %s\n", read_num, get_local_time());
+    }
+
+    // reads from base address 2 times
+    else if(client_num == 3)
+    {
+        sleep(5);
+        printf("Client Num: %d\n", client_num);
+        int read_num = -1;
+        rocket_read_addr(get_base_address(), &read_num, sizeof(int));
+        printf("[OUTPUT] READ VALUE: %d --- %s\n", read_num, get_local_time());
+
+        sleep(11);
+        printf("Client Num: %d\n", client_num);
+        read_num = -1;
+        rocket_read_addr(get_base_address(), &read_num, sizeof(int));
+        printf("[OUTPUT] READ VALUE: %d --- %s\n", read_num, get_local_time());
+    }
+    
+    while(1);
+
+    rocket_client_exit();
+
+```
+
+Overall this example as well as the above function is simple to understand. We are looking to do a single write (W) by a client who already owns the page followed by 2 readers reading from the page (2R), then another write by a new client (W), then the same two readers again requesting read access to the page and reading it. This is why our example is labeled W2RW2R.
+
+The code progresses as follows: The first client (or with client num 0) decides to write 123 to the base address at 0x40000000. This client already owns this page in the memory, so it should not be a problem. Next, clients with client nums 2 and 3 who are the readers will choose to read this value. Thus, if our framework is correct, both of them should read 123. And this is what they are able to do. For client with client num 1, after a certain sleep period, it will decide to write to the same address 0x40000000. Since it doesn't own the page, it will request access to it and write the value 321. If all works well, the same two readers will now decide to read this value and we will see that they both read 321. The working of this demo test as well as the steps to run it are discussed in more detail in the next section.
+
 ### Steps to run test cases for W2RW2R example (demo):
 - Here, to emulate the distributed systems, we will be using the CSIF machines available to CS students. We will show how to `ssh` into these to set up the server as well as the clients. We assume that your Kerberos username is represented as `{username}`. We are also assuming that you have downloaded/cloned and stored our repository in the root directory in the CSIF machines.
 
