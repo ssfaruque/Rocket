@@ -25,9 +25,84 @@ __The example at a high-level__:
 - We use the CREW protocol, therefore while there can be only one exclusive writer, there can be concurrent readers. Now if a client has read permissions and another client also wants to read, we follow a similar process to grant them permissions again. The new client who wants to read basically sends a read request for that page to master, and master finds the last client who was given read permissions, and then requests the page from them. However, it does not invalidate this reader, like in the writing case.
 
 ### The client and signal sockets
-To isolate the logic for communicating we use two separate sockets for the communication between clients and master. These are the signal sockets (`sig sockets`) or client sockets (`client sockets`):
+To isolate the logic for communicating we use two separate sockets for the communication between clients and master. These are the signal sockets (`sig sockets`) and client sockets (`client sockets`):
 - While we will get into this later, every time a page fault occurs at the client, there is a signal handler that intiates the read/write request to the master server. We use `sig sockets` only for communication to and from this signal fault handler at the client. Every time a communication or connection is required to either send or receive messages (pages) involving this signal fault handler `sig sockets` are used.
-- `client sockets` are used everywhere else. In particular, each client runs a process in a detached thread called `independent_listener_client` which is used to listen if the server ever requests any pages from it. Communication for pages done by this thread always uses `client sockets`. Moreover, the server also has independent threads for each client through a thread function `independent_listener_server` through which it keeps in touch with the clients and then communicates with them to respond to their signal faults as well as request them for pages. Since here we require communicate with both the requesting client and the client to be requested, both the `sig sockets` and `client sockets` are used. This is because this thread function will be in touch with both the signal handler at the requesting client and the independent listener at the client to be requested. Hence, the `sig socket` and the `client socket` are both used.
+- `client sockets` are used everywhere else. In particular, each client runs a process in a detached thread called `independent_listener_client` which is used to listen if the server ever requests any pages from it. Communication for pages done by this thread always uses `client sockets`. Moreover, the server also has independent threads for each client through a thread function `independent_listener_server` through which it keeps in touch with the clients and then communicates with them to respond to their signal faults as well as request them for pages. Since here we require communication with both the requesting client and the client to be requested, both the `sig sockets` and `client sockets` are used. This is because this thread function will be in touch with both the signal handler at the requesting client and the independent listener at the client to be requested. Hence, the `sig socket` and the `client socket` are both used.
+
+### The client code and architecture
+We will now discuss the client side code (at least the relevant parts!) in detail. Starting off, a quick look at `rocket_client.h`, the header file for the clients:
+```c
+#ifndef ROCKET_CLIENT_H
+#define ROCKET_CLIENT_H
+
+#include "com.h"
+
+extern int client_num;
+
+int rocket_client_init(int addr_size, int number_of_clients, const char* SERVER_IP_ADDR);
+
+int rocket_client_exit();
+
+void rocket_write_addr(void* addr, void* data, int num_bytes);
+
+void rocket_read_addr(void* addr, void* buf, int num_bytes);
+
+#endif  // ROCKET_CLIENT_H
+```
+Here, we expose the Rocket Client API functions: `rocket_write_addr()` and `rocket_read_addr()`. To utilize DSM, we provide these API abstractions in Rocket, clients cannot do this just by using raw pointers. Moving on to the `rocket_client.c` file-- starting off, each client is initialized with 1GB contiguous memory with write access, while for 4 clients, each client will only have write access for their 1GB out of 4GB of total shared memory. Thus, if a client wishes to write to a page it does not own, a signal fault is triggered. We can catch this signal, and then take appropriate actions to send over the page eventually, using a signal fault handler function. This signal fault handler function has the following definition:
+```c
+void sigfault_helper(int sig, siginfo_t *info, void *ucontext)
+{
+    printf("[INFO] STARTING SEGFAULT HANDLER!\n");
+
+    char *curr_addr = info->si_addr;
+
+    void *temp = get_base_address();
+    char *base_addr = (char *)temp;
+
+    int page_number = ((int)(curr_addr - base_addr)) / PAGE_SIZE;
+
+    printf("[INFO] segfault handler, page number: %d\n", page_number);
+
+    pthread_mutex_lock(&lock[page_number]);
+    char buf[BASE_BUFFER_SIZE];
+    snprintf(buf, BASE_BUFFER_SIZE, "%d,%d,%d", client_num, (int)currentOperation, page_number);
+
+    if (send_msg(sig_socket, buf, strlen(buf)) <= 0)
+    {
+        printf("Could not send message for page request!\n");
+        exit(1);
+    }
+
+    printf("[INFO] Successfully sent page request, client req\n");
+
+    char data[PAGE_SIZE];
+
+    for (int total = PAGE_SIZE, index = 0; total != 0;)
+    {
+        int val = recv_msg(sig_socket, &data[index], total);
+        total = total - val;
+        index = index + val;
+    }
+
+    mprotect(curr_addr, PAGE_SIZE, PROT_WRITE);
+    memcpy(curr_addr, data, PAGE_SIZE);
+
+    if (currentOperation == READING)
+        mprotect(curr_addr, PAGE_SIZE, PROT_READ);
+
+    pthread_mutex_unlock(&lock[page_number]);
+
+    printf("[INFO] FINISHING SEGFAULT HANDLER!\n");
+}
+```
+
+As can be seen above, this function essentially does the following:
+- As soon as there is a page fault (signal fault), the function tries to find the address of the page which is causing the fault. This is stored in `curr_addr`. 
+- Since we have a simplifying assumption in our system where we know the starting base addresses, we can easily find out the page number by doing basic arithmetic: `int page_number = ((int)(curr_addr - base_addr)) / PAGE_SIZE;` Thus, the client now knows the page number it wants access to, as well as the kind of access it wants (read or write). Since the programmer has to use our API for reading or writing, we know whether they want to read or write to a page in or out of memory, and we store this information in `currentOperation`. This type can hold values of `READING` or `WRITING` or `NONE`.
+- Now, the client sends the request for this page by sending it's client number, the operation it wants to perform (access level), as well as the page number. This information is sent as a string which we will parse later at the server side.
+- It then assumes that the server would have complied with the request and hence, found out the page and attempted to now send it back to it (this client). Thus, the signal handler concludes by receiving the page from the master server and then doing an `mprotect` to grant itself write permissions (`PROT_WRITE` or `PROT_READ` depending on `currentOperation`) to this page address and then a `memcpy` to copy the page in memory at that address.
+
 
 ### Steps to run test cases for W2RW2R example (demo):
 - Here, to emulate the distributed systems, we will be using the CSIF machines available to CS students. We will show how to `ssh` into these to set up the server as well as the clients. We assume that your Kerberos username is represented as `{username}`. We are also assuming that you have downloaded/cloned and stored our repository in the root directory in the CSIF machines.
