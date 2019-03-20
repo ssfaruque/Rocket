@@ -40,51 +40,27 @@ int main(int argc, char* argv[])
 
 	if(client_num == 0)
 	{
-        printf("Client Num: %d\n", client_num);
-        int read_num = -1;
-        rocket_read_addr(get_base_address(), &read_num, sizeof(int));
-        printf("[OUTPUT] READ VALUE: %d --- %s\n", read_num, get_local_time());
-
-
-		sleep(1);	
-		int num = 0;
+		int num = 100;
         printf("Client %d is writing\n", client_num);
         rocket_write_addr(get_base_address(), &num, sizeof(int));
-        printf("[OUTPUT] ADDRESS WRITTEN TO %p WITH VALUE %d --- %s\n", get_base_address(), *((int*)(get_base_address())), get_local_time());	
-		
-		sleep(28);
-        printf("Client Num: %d\n", client_num);
-        rocket_read_addr(get_base_address(), &read_num, sizeof(int));
-        printf("[OUTPUT] READ VALUE: %d --- %s\n", read_num, get_local_time());
+        printf("[OUTPUT] ADDRESS WRITTEN TO %p WITH VALUE %d --- %s\n", get_base_address(), *((int*)(get_base_address())), get_local_time());		
 	}
 
 
 	else if(client_num == 1)
 	{
-		sleep(7);
+		sleep(4);
         printf("Client Num: %d\n", client_num);
         int read_num = -1;
         rocket_read_addr(get_base_address(), &read_num, sizeof(int));
         printf("[OUTPUT] READ VALUE: %d --- %s\n", read_num, get_local_time());
-
-		sleep(1);
-		int num = 1;
-        printf("Client %d is writing\n", client_num);
-        rocket_write_addr(get_base_address(), &num, sizeof(int));
-        printf("[OUTPUT] ADDRESS WRITTEN TO %p WITH VALUE %d --- %s\n", get_base_address(), *((int*)(get_base_address())), get_local_time());	
 	}
 
 
 	else if(client_num == 2)
 	{
-		sleep(14);
-        printf("Client Num: %d\n", client_num);
-        int read_num = -1;
-        rocket_read_addr(get_base_address(), &read_num, sizeof(int));
-        printf("[OUTPUT] READ VALUE: %d --- %s\n", read_num, get_local_time());
-
-		sleep(1);
-		int num = 2;
+		sleep(8);
+		int num = -111;
         printf("Client %d is writing\n", client_num);
         rocket_write_addr(get_base_address(), &num, sizeof(int));
         printf("[OUTPUT] ADDRESS WRITTEN TO %p WITH VALUE %d --- %s\n", get_base_address(), *((int*)(get_base_address())), get_local_time());	
@@ -94,76 +70,12 @@ int main(int argc, char* argv[])
 
 	else if(client_num == 3)
 	{
-		sleep(21);
+		sleep(12);
         printf("Client Num: %d\n", client_num);
         int read_num = -1;
         rocket_read_addr(get_base_address(), &read_num, sizeof(int));
         printf("[OUTPUT] READ VALUE: %d --- %s\n", read_num, get_local_time());
-
-		sleep(1);
-		int num = 3;
-        printf("Client %d is writing\n", client_num);
-        rocket_write_addr(get_base_address(), &num, sizeof(int));
-        printf("[OUTPUT] ADDRESS WRITTEN TO %p WITH VALUE %d --- %s\n", get_base_address(), *((int*)(get_base_address())), get_local_time());	
 	}
-
-
-#if 0
-
-
-    // Writes the value 123 to the base address
-    if(client_num == 0)
-    {
-        int num = 123;
-        printf("Client %d is writing\n", client_num);
-        rocket_write_addr(get_base_address(), &num, sizeof(int));
-        printf("[OUTPUT] ADDRESS WRITTEN TO %p WITH VALUE %d --- %s\n", get_base_address(), *((int*)(get_base_address())), get_local_time());
-    }
-
-    // writes the value 321 to the base address
-    else if(client_num == 1)
-    {
-        sleep(8);
-        int num = 321;
-        printf("Client %d is writing\n", client_num);
-        rocket_write_addr(get_base_address(), &num, sizeof(int));
-        printf("[OUTPUT] ADDRESS WRITTEN TO %p WITH VALUE %d --- %s\n", get_base_address(), *((int*)(get_base_address())), get_local_time());
-    }
-
-
-    // reads from base address 2 times
-    else if(client_num == 2)
-    {
-        sleep(5);
-        printf("Client Num: %d\n", client_num);
-        int read_num = -1;
-        rocket_read_addr(get_base_address(), &read_num, sizeof(int));
-        printf("[OUTPUT] READ VALUE: %d --- %s\n", read_num, get_local_time());
-
-        sleep(11);
-        printf("Client Num: %d\n", client_num);
-        read_num = -1;
-        rocket_read_addr(get_base_address(), &read_num, sizeof(int));
-        printf("[OUTPUT] READ VALUE: %d --- %s\n", read_num, get_local_time());
-    }
-
-    // reads from base address 2 times
-    else if(client_num == 3)
-    {
-        sleep(5);
-        printf("Client Num: %d\n", client_num);
-        int read_num = -1;
-        rocket_read_addr(get_base_address(), &read_num, sizeof(int));
-        printf("[OUTPUT] READ VALUE: %d --- %s\n", read_num, get_local_time());
-
-        sleep(11);
-        printf("Client Num: %d\n", client_num);
-        read_num = -1;
-        rocket_read_addr(get_base_address(), &read_num, sizeof(int));
-        printf("[OUTPUT] READ VALUE: %d --- %s\n", read_num, get_local_time());
-    }
-    
-#endif
 
 
     while(1);
