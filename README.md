@@ -143,6 +143,23 @@ A number of things are happening here that are relevant:
 - Unlike the signal fault handler function which was using the `sig sockets`, this function utilizes `client sockets` for communication.
 - Moreover, we utilize locks to ensure that only one client enters the critical sections (of both signal fault handler and this function) for a particular page number at any given time to provide consistency guarantees and avoid race conditions.
 
+We can also get a quick look at the Rocket API for reading and writing to memory. They are very simple, and are used so that we know the operation the programmer wants to perform and then wrap code that we know will trigger signal faults if the page is not owned by the client:
+```c
+void rocket_write_addr(void *addr, void *data, int num_bytes)
+{
+    currentOperation = WRITING;
+    memcpy(addr, data, num_bytes);
+    memcpy(addr, data, num_bytes);
+}
+
+void rocket_read_addr(void *addr, void *buf, int num_bytes)
+{
+    currentOperation = READING;
+    memcpy(buf, addr, num_bytes);
+    memcpy(buf, addr, num_bytes);
+}
+```
+
 ### Steps to run test cases for W2RW2R example (demo):
 - Here, to emulate the distributed systems, we will be using the CSIF machines available to CS students. We will show how to `ssh` into these to set up the server as well as the clients. We assume that your Kerberos username is represented as `{username}`. We are also assuming that you have downloaded/cloned and stored our repository in the root directory in the CSIF machines.
 
